@@ -1,0 +1,548 @@
+\documentclass{revtex4}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+% Define some notation
+\newcommand{\proj}{\ensuremath{\mathcal{P}}}
+
+\newcommand{\aSym}{\ensuremath{\mathcal{A}}}
+\newcommand{\aAsym}{\ensuremath{\mathcal{B}}}
+
+\title{Artificial Production of Gravitational Waves by Localised Coherent Sources}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+In this paper we will study the effects of inconsistent notions of differentiation between the computing the source term from a given underlying field distribution
+This is the relevant case for simulations, since it is the field $\phi_i$ that are evolved directly, not the stress-energy tensor that acts as the source for the gravitational wave perturbations.
+In this paper, we will not worry about how the dynamics of the fields themselves are modified by the choice of discrete stencil, but will isolate the effects of the nonlinear transformation from $\phi$ to the stress-energy tensor, followed by the (linear) projection onto TT modes of the gravitational waves.
+
+\section{Pointless Notes}
+Rough outline of some steps to take:
+\begin{itemize}
+\item
+  \begin{itemize}
+  \item Assume spherical Gaussian, compute the numerically computed GW signal using various combinations of discrete stencils for the source and three-metric
+  \item Same calculation with an aspherical Gaussian
+  \item Same calculation with a Gaussian with spherical harmonic perturbations to radius
+  \item General formalism that will reduce to various convolutions of the FT of the object
+  \end{itemize}
+\item Once this is done, translate the numerical error in the source into a numerical error in the calculated GW spectrum using some appropriate Green's functions.  This will basically assume that the time-integrator is perfect, so that all errors are from spatial discretisation
+\item Think a bit about what time integration errors do (for long time runs lots of time-stepping algorithms will will constantly violate things like energy conservation, which will modify the amplitude of $h_{ij}$ and in long time runs this can accumulate.
+\end{itemize}
+
+Two sources of error
+\begin{itemize}
+\item Incorrect projection of stress-energy tensor
+\item Incorrect projection of stress-energy tensor onto $h_{ij}$
+\end{itemize}
+The latter will be highly entangled with the nonlinear dynamics of the scalar fields, although it is very difficult to see how the discretisation errors will cancel out unless you are very careful.
+The second effect is really just an issue of how you define linear operators.
+
+\section{TT Projections and the SVT Decomposition of a 3-tensor}
+Given a symmetric matrix $S_{ij}$, the transverse traceless (TT) projection can be obtained by applying the projection operator operator
+\begin{align}
+  \label{eqn:tt-proj-fourier}
+  \proj^{TT}_{ij,lm} &= P_{il}P_{jm} - \frac{1}{2}P_{ij}P_{lm} \\
+  P_{ij} &= \delta_{ij} - \hat{k}_i\hat{k}_j \, .
+\end{align}
+Here, we have expressed the projector in Fourier space, which assumes that the action of a derivative operator in Fourier space can be obtained by the replacement $\partial_i \to ik_i$.
+As we will see shortly, this naive replacement fails for a wide range of numerical approximation schemes based on lattice discretisations of a continuous system.
+Below we will derive the appropriate real space version of the TT projector~\eqref{eqn:tt-proj-fourier}, and it's generalisation to Fourier space.
+
+To derive~\eqref{eqn:tt-proj-fourier}, it is convenient to consider the standard SVT decomposition of an arbitrary symmetric matrix $S_{ij}$
+\begin{equation}
+  S_{ij} = \frac{S}{3}\delta_{ij} + \left(\partial_i\partial_j - \frac{1}{d}\delta_{ij}\nabla^2\right)S^{(S)} + (\partial_iS_j^{(V)} + \partial_jS^{(V)}_i) + S_{ij}^{(TT)} \, .
+\end{equation}
+For notational convenience, we also define the trace-free projection
+\begin{equation}
+  \bar{S}_{ij} = S_{ij} - \frac{\delta_{ij}}{d}S \qquad S = S_{ii} \, .
+\end{equation}
+The various components can be obtained from the original matrix through the projection operators
+\begin{subequations}
+\begin{align}
+  \proj^{Tr,\parallel}_{ij,lm} &\equiv \frac{1}{d}\delta_{ij}\delta_{lm} \\
+  \proj^{(S),\parallel}_{ij,lm} &\equiv \frac{d}{d-1}\left(\partial_i\partial_j - \frac{1}{d}\delta_{ij}\nabla^2\right)\nabla^{-4}\left(\partial_l\partial_m - \frac{1}{d}\delta_{lm}\nabla^2\right) \\
+  \proj^{(S),\perp}_{ij,lm} &= \delta_{il}\delta_{jm} - P^{(S),\parallel}_{ij,lm} \\
+  \proj^{(V),\parallel}_{ij,lm} &\equiv (\delta_{ia}\partial_j + \delta_{ja}\partial_i)\nabla^{-2}\partial_b\left(\delta_{al}\delta_{bm} - \proj^{(S),\parallel}_{ab,lm} - \proj^{Tr,\parallel}_{ab,lm}\right) \\
+  \proj^{(V),\perp}_{ij,lm} &= \delta_{il}\delta_{lm} - P_{ij,lm}^{(V),\parallel} \\
+  \proj^{(T),\parallel}_{ij,lm} &= \\
+\end{align}
+\end{subequations}
+Here ${}^\parallel$ indicates the projection onto solely the given component of the matrix.
+We obtain the TT projection through repeated removal of individual components
+\begin{align}
+  \mathcal{P}_{ij,lm}^{(TT)} &= \left(\delta_{ia}\delta_{jb} - \proj^{(V),\parallel}_{ij,ab}\right)\left(\delta_{am}\delta_{bn}-\proj_{ab,mn}^{(S),\parallel}\right)\left(\delta_{ml}\delta_{nm}-\proj_{mn,lm}^{Tr,\parallel}\right) \\
+  &=  \delta_{il}\delta_{jm} - \proj_{ij,lm}^{(V),\parallel} - \proj_{ij,lm}^{(S),\parallel} - \proj_{ij,lm}^{Tr,\parallel}
+\end{align}
+
+The scalar potential ($S$) and vector potential $S_i$ are easily obtained by solving
+\begin{subequations}
+  \begin{align}
+    \nabla^4 S^{(S)} &= \frac{d}{d-1}\partial_i\partial_j\bar{S}_{ij} \\
+    \nabla^2 S_i &=
+  \end{align}
+\end{subequations}
+
+We now assume we work in the continuum, and that we can treat the system as period so the inverse Laplacian operators are easily expressed in terms of wavenumbers.
+To extract the total scalar contribution (the trace and $S^{(S)}$), we can use the projection
+\begin{equation}
+   \proj^{{\rm scalar}}_{ij,lm} = \proj_{ij,lm}^{(S),\parallel} + \proj_{ij,lm}^{Tr,\parallel} = \frac{1}{2}P_{ij}P_{lm} + \hat{k}_i\hat{k}_j\hat{k}_l\hat{k}_m \, .
+\end{equation}
+Except for the term involving 4 momenta, this is the second term in the representation~\eqref{eqn:}.
+To obtain the projector onto the vector modes, first define
+\begin{equation}
+  Q^{(V)}_{ij,lm} = \hat{k}_i\hat{k}_l\delta_{jm} + \hat{k}_j\hat{k}_l\delta_{im}
+\end{equation}
+which satisfy
+\begin{equation}
+  Q^{(V)}_{ij,ab}\proj^{{\rm scalar}}_{ab,lm} = 2\hat{k}_i\hat{k}_j\hat{k}_l\hat{k}_m
+\end{equation}
+from which we immediately obtain (using the symmetry of the projector)
+\begin{equation}
+  \proj_{ij,lm}^{(V)} = \hat{k}_i\hat{k}_l\delta_{jm} + \hat{k}_j\hat{k}_m\delta_{il} - 2\hat{k}_i\hat{k}_j\hat{k}_l\hat{k}_m = -P_{il}P_{jm} + \delta_{il}\delta_{jm} - \hat{k}_i\hat{k}_j\hat{k}_l\hat{k}_m \, .
+\end{equation}
+For convenience in future calculations, we write explicitly
+\begin{subequations}
+\begin{align}
+  S_{ij}^{\rm scalar} &= \frac{\delta_{ij}}{2}\left(S_{ll} - \hat{k}_lS_{lm}\hat{k}_m\right) - \frac{\hat{k}_i\hat{k}_j}{2}\left(S_{ll} - 3\hat{k}_lS_{lm}\hat{k}_m\right) \\
+  S_{ij}^{(V)} &= \hat{k}_i\hat{k}_lS_{lj} + \hat{k}_j\hat{k}_lS_{li} - 2\hat{k}_i\hat{k}_j\hat{k}_lS_{lm}\hat{k}_m \\
+  S_{ij}^{(T)} &= S_{ij} - \hat{k}_iS_{jl}\hat{k}_l - \hat{k}_jS_{il}\hat{k}_l + \frac{1}{2}\delta_{ij}\left(\hat{k}_lS_{lm}\hat{k}_m - S_{ll}\right) + \frac{1}{2}\hat{k}_i\hat{k}_j\left(S_{ll}+\hat{k}_lS_{lm}\hat{k}_m\right) \\
+\end{align}
+\end{subequations}
+from which we see we require the following three contractions $S_{ii}$, $\hat{k}_lS_{li}$ and $\hat{k}_lS_{lm}\hat{k}_m$ of $S_{ij}$.
+It is also straightforward to verify that $S_{lm}^{(T)} = \hat{S}_{lm}^{(T)}$ so that we are free to first remove the trace of $S_{ij}$ if we want.
+
+Using these expressions, we immediately obtain the original result for the TT projector,
+but now we have clarified the connection between the full SVT decomposition of a symmetric matrix $S_{ij}$ and the projection onto the TT components.
+
+However, despite this apparent simplicity, it should be clear that caution must be exercised when working with a discretised system, in particular when the derivative operators appearing in the projection are discretised by means other than pseudospectral or spectral methods.
+
+{\bf Add a comment that in real space this ambiguity arises because we're inverting differential operators, which on a lattice is just a huge matrix inversion}
+To see how problems may arise, notice that to extract the trace-free scalar part of $S_{ij}$, we must invert the operator $\nabla^4$.
+For periodic systems with exact derivatives, this is easily done in Fourier space by simply dividing by $k^4$.
+However, when finite-difference approximations are used, the operator inversion becomes a large matrix inversion problem.
+The key point is that the eigenvalues of the discrete operator approximation $\nabla^4$ will, in general, differ from the continuum values.
+For example, with the stencil
+{\bf write the general stencil}
+we have
+{\bf write what this looks like.  Product of sines}
+
+\section{Gravitational Waves from Localised Sources of Fixed Frequency}
+We first consider GWs produced in an expanding FRW background.
+Using Green's function techniques, we can show the energy density in gravitational waves is
+\begin{equation}
+  \Omega_k^{GW} = 
+\end{equation}
+with
+\begin{equation}
+  S_k = \frac{k^3}{2M_P^2Va^4}\int d\Omega_k\sum_{ij}\left(\left|\int_{\tau_i}^\tau d\tau'\cos(k\tau')\cos^2(\omega \tau')\tilde{\mathcal{T}}^{TT}_{ij}({\bf k},\tau')\right|^2 + \left|\int_{\tau_i}^\tau d\tau'\sin(k\tau')\cos^2(\omega \tau')\tilde{\mathcal{T}}^{TT}_{ij}({\bf k},\tau')\right|^2 \right)
+\end{equation}
+where $\tau$ is the conformal time and $k$ the comoving momentum.
+We must now adopt a model for the source $T^{TT}_{ij}$.
+To explore the effects of a single localised source with fixed frequency (in cosmic time), we assume
+\begin{equation}
+  \phi({\bf x},t) = P({\bf x})\cos(\omega t)
+\end{equation}
+with
+\begin{equation}
+  T^{TT}_{ij}({\bf x},t) = \mathcal{T}_{ij}({\bf x},t)\cos^2(\omega t) \, .
+\end{equation}
+The extension to multiple harmonics and multiple well-separated objects will be straightforward and considered below.({\bf But there is the possible issue of resonant singularities in the denominator ...}).
+Next, we will consider the case where the field $\phi$ has a fixed physical shape, so that time dependence in $\mathcal{T}_{ij}$ enters only through the relationship $x_{\rm phys} = a(t)x_{\rm com}$.
+We will explicitly compute these time-dependent parameters in some simple cases below.
+Furthermore, we will assume these parameters are smooth and non-oscillatory, so the evolution of $\mathcal{T}_{ij}$ is smooth.
+
+We have
+\begin{subequations}
+\begin{align}
+  \cos k\tau\cos^2\omega t &= \frac{1}{4}\cos(2\omega t-k\tau) + \frac{1}{4}\cos(2\omega t+k\tau) + \frac{1}{2}\cos k\tau \\
+  \sin k\tau\cos^2\omega t &= \frac{1}{4}\sin(2\omega t-k\tau) + \frac{1}{4}\sin(2\omega t+k\tau) + \frac{1}{2}\sin k\tau \, .
+\end{align}
+\end{subequations}
+The dominant contributions to the integrals come from the sinusoids of $2\omega t - k\tau$, which have stationary points in their evolution when
+\begin{equation}
+  \tau_k = \frac{2\omega}{k}\frac{dt}{d\tau}
+\end{equation}
+Assuming smooth (non-oscillatory) behaviour in $a$ and $T_{ij}^{TT}$, we can approximate
+\begin{equation}
+  \int_{\tau_i}^\tau d\tau' a(\tau')\mathcal{T}_{ij}({\bf k},\tau')\cos k\tau'\cos^2\omega t \approx \sqrt{2\pi i}\frac{a_k\mathcal{T}_{ij}({\bf k},\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\cos(2\omega t_k -k\tau_k)\Theta(\tau - \tau_k)
+\end{equation}
+and
+\begin{equation}
+  \int_{\tau_i}^\tau d\tau' a(\tau')\mathcal{T}_{ij}({\bf k},\tau')\sin k\tau'\cos^2\omega t \approx \sqrt{2\pi i}\frac{a_k\mathcal{T}_{ij}({\bf k},\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\sin(2\omega t_k -k\tau_k)\Theta(\tau - \tau_k)
+\end{equation}
+where $\Theta(x)$ is the Heaviside step function.
+Here the subscript ${}_k$ indicates that the given quantity is evaluated at the conformal time $\tau_k$ when
+\begin{equation}
+  2\omega\frac{dt}{d\tau} = k \qquad a(\tau_k) = \frac{k}{2\omega} \, .
+\end{equation}
+Squaring and summing, we find
+\begin{equation}
+  2M_P^2Va^4S_k \approx k^3\frac{\pi}{16 \omega H_k}\sum_{ij}\left|\mathcal{T}_{ij}({\bf k},\tau_k)\right|^2\Theta(2\omega a - k) \, .
+\end{equation}
+Now, suppose $a = a_0 t^p$, then we have $H_k^{-1} = \frac{k^{1/p}}{p(2\omega)^{1/p}}$
+{\bf be more careful with the $a_0$ here.}
+
+We immediately note there is a sharp cutoff in the spectrum at $k = 2\omega a$.
+Moving beyond the approximation used here, the stationary phase contribution will have a short period of time during which it turns on (set by the curvature of the frequency), which will smooth the step function slightly, but still leave a rapidly decreasing function.
+The structure for smaller $k$ values depends on the scaling properties of the source.
+If the sources scales as a power law in the scale factor, then 
+
+\subsection{Discrete Green's Function}
+{\bf Redo the Green's function using the discrete Laplacian being used to evolve the $h_{ij}$'s.  This will then capture additional projection effects from mismatch between $h_{ij}$ evolution and projection, not from error in projecting the source.  This will (up to time-integration errors), fully capture the effects of discreteness in solved the sourced GW problem.  It won't capture how discretisation modifies $\phi$.}
+In order to directly connect with common numerical approach, and contrast them with the continuum formulation, here we will briefly derive the necessary modifications to the formalism above for the case when $h_{ij}$ is evolved using a finite-differencing approximation for the Laplacian.
+We continue to work in conformal time
+\begin{equation}
+  h_{ij}'' + 2\mathcal{H}h_{ij}' - \frac{1}{dx^2}L[h_{ij}] = \frac{2}{M_P^2}a^2\pi_{ij}
+\end{equation}
+where we have now replaced $\nabla^2$ with its discrete lattice representation.
+As before, it is convenient to instead work with $\bar{h}_{ij} \equiv ah_{ij}$
+\begin{equation}
+  \bar{h}_{ij}'' + \frac{1}{dx^2}L[\bar{h}_{ij}] - \frac{a''}{a}\bar{h}_{ij} = \frac{2}{M_P^2}a\pi_{ij} \, .
+\end{equation}
+
+\subsection{Minkowski Space}
+{\bf This has problems with poles in the computed signal.  Might have to just rederive the formalism to confirm this is true.}
+We can also redo the above calculations on a Minkowski background
+\begin{equation}
+  S_k = \frac{k^3}{2M_P^2V}\int d\Omega_k\sum_{ij}\left|\tilde{\mathcal{T}}_{ij}({\bf k})\right|^2 \left(\left|\int_{t_i}^tdt'\cos(kt')\cos^2(\omega t') \right|^2 + \left|\int_{t_i}^tdt'\sin(kt')\cos^2(\omega t') \right|^2 \right) \, .
+\end{equation}
+{\bf What breaks at the poles?  Is the above equation wrong somehow due to an ambiguity in defining the kernel?}
+We should immediately worry, as resonance between $k$ and $\omega$ leads to poles in the temporal integrals at $2k = \omega$.
+Therefore, small errors in the calculation of $T_{ij}({\bf k})$ can result in enormous errors in the final calculation.
+In particular, if the numerical error at the resonant frequency is large compared to the true signal, an artificial numerical peak will be produced.
+
+Performing the time-integrals
+\begin{align}
+  \int \cos(kt)\cos^2(kt) &= \frac{1}{4}\left(\frac{\sin([2\omega+k]t)}{2\omega+k} + \frac{\sin([2\omega-k]t)}{2\omega-k} + 2\frac{\sin(kt)}{k} \right) \\
+  \int \sin(kt)\cos^2(kt) &= -\frac{1}{4}\left(\frac{\cos([2\omega+k]t)}{2\omega+k} + \frac{\cos([2\omega-k]t)}{2\omega-k} + 2\frac{\cos(kt)}{k} \right)
+\end{align}
+
+\subsection{Numerical versus actual signal}
+{\bf Rewrite this to avoid the intermediary of $h_{ij}$ and simply insert the source into the integrals.  Basic idea stays the same.}
+Thus far, we have made no assumption about whether the source $T_{ij}$ arises from a physical mechanism or from numerical erros.  Let's now briefly consider how the discretisation errors outlines above feed into the numerically inferred GW amplitude.
+We write
+\begin{equation}
+  \pi_{ij} = \Pi_{ij} + \Delta\Pi_{ij}
+\end{equation}
+and assume for the moment that we have a perfect temporal integrator (this point will be addressed later).
+We then solve
+\begin{equation}
+  \Box h_{ij} = \pi_{ij} = \Pi_{ij} + \Delta\Pi_{ij}
+\end{equation}
+so that the solution is
+\begin{equation}
+  h_{ij} = h_{ij}^{(0)} + \Delta h_{ij}
+\end{equation}
+where $h_{ij}^{(0)}$ is the ``true'' solution in the absence of discretisation errors.
+We must then compute the only non-trivial rotational invariant of $\dot{h}_{ij}$
+\begin{equation}
+  \left|\dot{h}_{ij}\dot{h}^{ij}\right| = \mathrm{Tr}\left(\dot{h}^2\right)
+\end{equation}
+which we expand
+\begin{equation}
+  \left|\dot{h}_{ij}\dot{h}^{ij} \right|^2 = \left|\dot{h}_{ij}^{(0)}\dot{h}^{(0),ij}\right|^2 + 2\left|\dot{h}_{ij}^{(0)}\Delta\dot{h}^{ij}\right| + \left|\Delta\dot{h}_{ij}\Delta\dot{h}^{ij}\right|^2 \, .
+\end{equation}
+For stochastic or fully phase mixed sources, we might expect that the cross term to be small, but for the case of a coherent source, we do not expect the required phase cancellations to occur and the second term may be larger than the third term.  As well, while some numerical errors (such as machine roundoff) will enter in a random and uncorrelated way, numerical errors associated with numerical approximations (such as finite differencing) can instead exhibit high degrees of correlation, which can significantly bias final results (just as with any systematic error) as opposed to increasing the statistical uncertainty.
+
+\section{Toy Model: Gaussian Blob}
+Before turning to the question of dynamically evolving structure and exploring the issue of consistency between time evolution derivative stencils and projection operations,
+here we first explore a simple non-dynamical toy model to qualitatively understand the projection of localised field structures into gravitational waves.
+
+Here we consider the following field configuration
+\begin{equation}
+  \phi(x,y,z) = e^{-\sum\frac{x_i^2}{2\sigma_i^2}}
+\end{equation}
+with the widths $\sigma_i$ taken as free parameters.
+
+First, we assume $\sigma_x=\sigma_y=\sigma_z=\sigma$.
+In the continuum, it is straightforward to see that (here we drop the diagonal Lagrangian contribution)
+\begin{subequations}
+\begin{align}
+  \Pi_{ij} = \frac{x_ix_j}{\sigma^4}e^{-x^2/\sigma^2}
+\end{align}
+\end{subequations}
+with the remaining components easily obtained via the obvious substitutions.
+Fourier transforming, we obtain
+\begin{align}
+  \tilde{\Pi}_{xx}({\bf k}) &= \pi^{3/2}\frac{\sigma}{2}e^{-\sigma^2k^2/4}\left(1-\frac{\sigma^2k_x^2}{2}\right) \\
+  \tilde{\Pi}_{xy}({\bf k}) &= -\pi^{3/2}\frac{\sigma}{4}e^{-\sigma^2k^2/4}(\sigma k_x)(\sigma k_y)
+\end{align}
+
+For notational convenience, let's define
+\begin{equation}
+  \mathcal{A}(k) = \pi^{3/2}\sigma e^{-\frac{\sigma^2k^2}{4}}
+\end{equation}
+We have the following contractions of $\tilde{\Pi}_{lm}$
+\begin{subequations}
+\begin{align}
+  \tilde{\Pi}_{ll} &= \frac{\mathcal{A}(k)}{2}\left(3-\frac{\sigma^2k^2}{2}\right) \\
+  \hat{k}_l\tilde{\Pi}_{li} &= \frac{\mathcal{A}(k)}{2}\hat{k}_i\left(1-\frac{\sigma^2k^2}{2}\right) \\
+  \hat{k}_l\tilde{\Pi}_{lm}\hat{k}_m &= \frac{\mathcal{A}(k)}{2}\left(1-\frac{\sigma^2k^2}{2}\right) \, .
+\end{align}
+\end{subequations}
+We readily find that $\Pi_{ij}$ is purely scalar as expected, with
+\begin{equation}
+  \tilde{\Pi}_{ij}^{{\rm scalar}}({\bf k}) = \frac{\mathcal{A}(k)}{2}\left(\delta_{ij}-\hat{k}_i\hat{k}_j\frac{\sigma^2k^2}{2}\right) = \tilde{\Pi}_{ij} \, .
+\end{equation}
+
+Now, suppose that instead of computing exact derivatives, we approximate the first derivatives necessary to obtain the stress-tensor via
+\begin{equation}
+  D_x[\phi](x) = \frac{\sum_{\alpha}c_\alpha \phi}{2dx}
+\end{equation}
+with analogous definitions for the other directions.
+In order to illustrate the issues, when performing analytic calculations we will take
+\begin{equation}
+  D_x[\phi](x) = \frac{1}{2dx}\left(\phi(x+dx,y,z)-\phi(x-dx,y,z)\right) \, .
+\end{equation}
+Let's denote the stress-tensor obtained this was as
+\begin{equation}
+  \pi_{ij} \equiv D_i[\phi]D_j[\phi] \, .
+\end{equation}
+Note that this is an exceptionally poor choice for the discretisation if paired with a second order accurate and second order isotropic Laplacian stencil for the scalar field evolution, as the trace of $\pi_{ij}$ will not match the self-consistent definition of the isotropic pressure that is needed to evolve the Hubble constant.
+Neverless, as our point is to illustrate how bad discretisation choices lead to numerical artifacts, we will proceed.
+{\bf Insert a definition that's actually consistent with the trace being the isotropic pressure.}
+
+Explicitly, for the second order accurate stencil~\eqref{eqn:} we have
+\begin{align}
+  \pi_{ij} &= \frac{e^{-\frac{x^2}{\sigma^2}}}{\sigma^2}e^{-\frac{dx^2}{\sigma^2}}\left(\frac{\sigma}{dx}\right)^2\sinh\left(\frac{x_idx}{\sigma^2}\right)\sinh\left(\frac{x_jdx}{\sigma^2}\right) 
+\end{align}
+
+Fourier transforming and using
+\begin{equation}
+  \int dx e^{ikx}e^{-x^2/\sigma^2}e^{Jx} = \sqrt{\pi\sigma^2}e^{\frac{\sigma^2 J^2}{4}}e^{-\frac{\sigma^2 k^2}{4}}e^{i\sigma^2kJ/2} \, ,
+\end{equation}
+we trivially obtain
+\begin{subequations}
+\begin{align}
+  \tilde{\pi}_{xx}({\bf k}) &= \frac{\pi^{3/2}\sigma^3}{2}e^{-\sigma^2 k^2/4}\frac{1}{\sigma^2}\left(\frac{\sigma}{dx}\right)^2\left(1-e^{-\frac{dx^2}{\sigma^2}} - 2\sin^2\left(\frac{k_xdx}{2}\right)\right) \\
+  &= \frac{\pi^{3/2}\sigma^3}{2}e^{-\sigma^2 k^2/4}\frac{1}{\sigma^2}\left(\frac{\sigma}{dx}\right)^2\left(\cos(k_xdx) - e^{-\frac{dx^2}{\sigma^2}}\right) \\
+  \tilde{\pi}_{xy}({\bf k}) &= -\pi^{3/2}\sigma^3e^{-\frac{\sigma^2k^2}{4}}\frac{1}{\sigma^2}\left(\frac{\sigma}{dx}\right)^2\sin\left(\frac{k_xdx}{2}\right)\sin\left(\frac{k_ydx}{2}\right)e^{-\frac{dx^2}{2\sigma^2}}
+\end{align}
+\end{subequations}
+We can combine these expressions as
+\begin{equation}
+  \tilde{\pi}_{ij} = \frac{\mathcal{A}}{2}\left(\frac{\sigma}{dx}\right)^2\delta_{ij}\left[\left(1-e^{-\frac{dx^2}{\sigma^2}}\right) - \frac{1}{2}\left(1-e^{-\frac{dx^2}{2\sigma^2}}\right)4\sin^2\left(\frac{k_idx}{2}\right)\right] - \frac{\mathcal{A}}{4}\left(\frac{\sigma}{dx}\right)^2e^{-\frac{dx^2}{2\sigma^2}}2\sin\left(\frac{k_idx}{2}\right)2\sin\left(\frac{k_jdx}{2}\right)
+\end{equation}
+
+Comparing the analytic result with the finite-difference approximation, we see that discretisation errors enter in two distinct ways: $k_idx$-dependent contributions resulting from the non-trivial Fourier space structure of the spatial stencils, and $\sigma^{-1}dx$ contributions arising directly from discretisation errors in the finite-difference derivatives.
+
+To separate the effects of loss of resolution of the localised Gaussian versus distortion effects of the finite-differencing on large wavenumbers, it is convenient to introduce the following definitions
+\begin{equation}
+  f(x) \equiv e^{-x}\frac{\sinh(x)}{x} \qquad g(x) \equiv 2e^{-x}\sinh(x)
+\end{equation}
+Further, for notational simplicity, we introduce the following effective wavevectors
+\begin{subequations}
+\begin{align}
+  \tilde{k} &\equiv \frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) \approx \sigma k\hat{k}_i \\
+  \bar{k}_i &\equiv \hat{k}_i\frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) \approx \sigma k\hat{k}_i^2
+\end{align}
+\end{subequations}
+where the approximate equalities hold for $k_idx \ll 1$.
+We also will use the following natural definitions
+\begin{equation}
+  \tilde{k}^2 \equiv \sum_i\tilde{k}_i^2 = 4\frac{\sigma^2}{dx^2}\sum_i\sin^2\left(\frac{k_idx}{2}\right) \approx \sigma^2k^2
+\end{equation}
+\begin{equation}
+  \bar{k}^2 \equiv \sum_i\bar{k}_i^2 = \sum_i \hat{k}_i^2\left(\frac{2\sigma}{dx}\right)^2\sin^2\left(\frac{k_idx}{2}\right) \approx \sigma^2k^2\sum_i\hat{k}_i^4
+\end{equation}
+and
+\begin{equation}
+  \kappa \equiv \sum_i\bar{k}_i = \sum_i\hat{k}_i\frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) \approx \sigma k\sum_i\hat{k}_i^2 = \sigma k
+\end{equation}
+
+We can now re-express $\tilde{\pi}_{ij}$
+\begin{equation}
+  \tilde{\pi}_{ij} = \frac{\mathcal{A}}{2}\delta_{ij}\left[f\left(\frac{dx^2}{2\sigma^2}\right) - \frac{1}{2}g\left(\frac{dx^2}{4\sigma^2}\right)\tilde{k}_i^2\right] - \frac{\mathcal{A}}{4}e^{-\frac{dx^2}{2\sigma^2}}\tilde{k}_i\tilde{k}_j
+\end{equation}
+
+As before, we compute
+\begin{subequations}
+  \begin{align}
+    \tilde{\pi}_{ii} &= \frac{\aSym}{2}\left(\frac{\sigma}{dx}\right)^2 \left[3\left(1-e^{-\frac{dx^2}{\sigma^2}}\right) - 2\sum_i\sin^2\left(\frac{k_idx}{2}\right)\right] \\
+     &= \frac{\mathcal{A}}{2}\left(3f\left(\frac{dx^2}{2\sigma^2}\right) - \frac{1}{2}\tilde{k}^2\right) \\
+    \hat{k}_l\tilde{\pi}_{li} &= \frac{\mathcal{A}}{2}\left(\frac{\sigma}{dx}\right)^2\left(\hat{k}_i\left(1-e^{-\frac{dx^2}{\sigma^2}}\right) - 2\sin\left(\frac{k_idx}{2}\right)\frac{\Sigma_i}{2}\right) \\
+    &= \hat{k}_i\frac{\aSym}{2}\left(f\left(\frac{dx^2}{2\sigma^2}\right)-\frac{1}{2}g\left(\frac{dx^2}{4\sigma^2}\right)\tilde{k}_i^2\right) - \tilde{k}_i\frac{\aSym}{4}e^{-\frac{dx^2}{2\sigma^2}}\left(\sum_i\bar{k}_i\right)\\
+    \hat{k}_l\tilde{\pi}_{lm}\hat{k}_m &= \frac{\mathcal{A}}{2}\left(\frac{\sigma}{dx}\right)^2\left[\left(1-e^{-\frac{dx^2}{\sigma^2}}\right) - 2\sum_a\hat{k}_a\sin\left(\frac{k_adx}{2}\right)\frac{\Sigma_a}{2} \right] \\
+    &= \frac{\mathcal{A}}{2}\left[f\left(\frac{dx^2}{2\sigma^2}\right) -\frac{1}{2}g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 - \frac{e^{-\frac{dx^2}{2\sigma^2}}}{2}\left(\sum_i\bar{k}_i\right)^2 \right]\, .
+  \end{align}
+\end{subequations}
+    {\bf Check the last line, especially the $e^{-\frac{dx^2}{2\sigma^2}}$.  I think the asymmetry is because of the incompatible stencil used to define the first derivatives.}
+where we have defined
+\begin{align}
+  \Sigma_i &= 2\hat{k}_i\sin\left(\frac{k_idx}{2}\right) + 2\sum_{l\neq i}\hat{k}_l\sin\left(\frac{k_ldx}{2}\right)e^{-\frac{dx^2}{2\sigma^2}} \\
+   &= e^{-\frac{dx^2}{2\sigma^2}}2\sum_l\hat{k}_l\sin\left(\frac{k_ldx}{2}\right) + 2\hat{k}_ie^{-\frac{dx^2}{4\sigma^2}}\sinh\left(\frac{dx^2}{4\sigma^2}\right)2\sin\left(\frac{k_idx}{2}\right) \, .
+\end{align}
+
+In the continuum, we have $\Sigma_i \to (k dx)\sum_i\hat{k}_i^2 = kdx$, while deviations from this due to the finite differencing are evident.
+\begin{figure}
+  \caption{Plotting the discrete version of the sum of a unit vector's components squared.  Show how absolutedly awful it is once you get anywhere near the Nyquist.}
+\end{figure}
+
+
+From this we obtain the various SVT components \emph{assuming the continuum based projection operators}.  We see that both vector and tensor contributions are generated
+\begin{subequations}
+  \begin{align}
+    \tilde{\pi}_{ij}^{\rm scalar} &= \frac{1}{2}\delta_{ij}\mathcal{A}\left(f\left(\frac{dx^2}{2\sigma^2}\right) - g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 - \frac{1}{4}\left[ \tilde{k}^2 - e^{-\frac{dx^2}{2\sigma^2}}(\sum \bar{k}_i)^2\right]\right) \\
+       &- \frac{1}{2}\hat{k}_i\hat{k}_j\frac{\mathcal{A}}{4}\left(3e^{-\frac{dx^2}{2\sigma^2}}(\sum\bar{k}_i)^2 - \tilde{k}^2 + 3g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 \right) \\
+    \tilde{\pi}_{ij}^{(V)} &= \mathcal{A}\left(\frac{\sigma}{dx}\right)^2\frac{1}{2}\left[\hat{k}_i\hat{k}_j\sum_a\hat{k}_a2\sin\left(\frac{k_adx}{2}\right)\Sigma_a - \frac{1}{2}\left(\hat{k}_i2\sin\left(\frac{k_jdx}{2}\right)\Sigma_j + \hat{k}_j2\sin\left(\frac{k_idx}{2}\right)\Sigma_i\right) \right]\\
+    \tilde{\pi}_{ij}^{(T)} &= \, .
+  \end{align}
+\end{subequations}
+
+At this point, it is extremely unclear that a consistent set of projection operators associated with the given discrete definition of $\pi_{ij}$ can even be found.
+This is not surprising, given that the trace of the operator as defined is inconsistent with a Laplacian stencil living on the lattice.
+A better choice of discretisation should instead permit some notion of a discrete stencil to properly project out the unphysical numerical artifacts associated with the discrete stencils, which we will explore below.
+
+\begin{figure}
+  \includegraphics[width=3.375in]{{{txx-analytic}}}
+  \includegraphics[width=3.375in]{{{txy-analytic}}} \\
+  \includegraphics[width=3.375in]{{{txx-numerical-dx0.25}}}
+  \includegraphics[width=3.375in]{{{txy-numerical-dx0.25}}} \\
+  \includegraphics[width=3.375in]{{{txx-diff-dx0.25}}}
+  \includegraphics[width=3.375in]{{{txy-diff-dx0.25}}}
+  \caption{Comparision of the exact $\Pi_{ij}$ and the finite-difference $\pi_{ij}$ in real space for a single Gaussian.  We see that the numerical errors induce non-trivial structure into the errors with quadrupole and higher contributions.  We expect this to feed into errors in the calculation of gravitational wave energy densities.  In the top row we show the analytic result, in the middle row the numerical approximation, and in the bottom row the difference between the two.  In the left column we show $T_{xx}$ and in the right column $T_{xy}$.  The remaining components can be obtained trivially from these two.  In the case of the numerical stencil, we have taken $dx/\sigma = 0.25$.}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=3.375in]{{{convergence-max-error}}}
+  \caption{Maximal real-space error in the calculation of $\Pi_{ij}$ using the finite-difference approximation as a function of the grid spacing $dx / \sigma$.}
+\end{figure}
+
+\begin{figure}
+  \caption{Fourier space representations of the source.}
+\end{figure}
+
+\begin{figure}
+  \caption{TT, scalar and vector projections of the sources based on a continuum projection operator.}
+\end{figure}
+
+\begin{figure}
+  \caption{Total angular integral of TT component as a function of grid space $\sigma^{-1}dx$.}
+\end{figure}
+
+
+\section{Toy Model II: Asymmetric Gaussian}
+We now consider a slightly more complex model, by allowing the Gaussian to be ellipsoidal with 3 different $\sigma_i$'s.
+To simplify the algebra, we first consider the case where the principal axes of the ellipse lie along the coordinate axes.
+The more general case allows rotation off of this configuration, which allows us to explore the influence of the anisotropy of the finite difference stencil.
+{\bf Do this case as well.  Doesn't matter for analytic result, does for numerical.}
+Carrying through the same calculations as above, we find
+
+\subsection{Exact Result}
+\begin{equation}
+  \Pi_{ij} = \frac{x_ix_j}{\sigma_i^2\sigma_j^2}e^{-\sum\frac{x_i^2}{\sigma_i^2}}
+\end{equation}
+\begin{align}
+  \tilde{\Pi}_{xx} &= \pi^{3/2}\left(\Pi_i\sigma_i\right)e^{-\frac{1}{4}\sum_i\sigma_i^2k_i^2}\frac{1}{2\sigma_x^2}\left(1-\frac{\sigma_x^2k_x^2}{2}\right) \\
+  \tilde{\Pi}_{xy} &= -\pi^{3/2}\left(\Pi_i\sigma_i\right)e^{-\frac{1}{4}\sum_i\sigma_i^2k_i^2}\frac{1}{4\sigma_x\sigma_y}\sigma_xk_x\sigma_yk_y
+\end{align}
+\begin{equation}
+  \tilde{\Pi}_{ij} = \pi^{3/2}(\sigma_x\sigma_y\sigma_z)e^{-\frac{1}{4}\sigma_i^2k_i^2}\frac{1}{2\sigma_i\sigma_j}\left(\delta_{ij} - \hat{k}_i\hat{k}_j\frac{\sigma_i\sigma_jk^2}{2}\right) \, .
+\end{equation}
+
+Define
+\begin{equation}
+  \aAsym = \pi^{3/2}\left(\Pi_i\sigma_i\right)e^{-\frac{1}{4}\sigma_i^2k_i^2}
+\end{equation}
+
+\begin{subequations}
+\begin{align}
+  \tilde{\Pi}_{ii} &= \frac{\aAsym}{2}\left(\sum_i\sigma_i^{-2} - \frac{k^2}{2}\right) \\
+  \hat{k}_l\tilde{\Pi}_{li} &= \hat{k}_i\frac{\aAsym}{2\sigma_i^2}\left(1-\frac{\sigma_i^2k^2}{2}\right) \\
+  \hat{k}_l\tilde{\Pi}_{lm}\hat{k}_m &= \frac{\aAsym}{2}\left[\sigma_a^{-2}\hat{k}_a^2 -\frac{k^2}{2}\right] 
+\end{align}
+\end{subequations}
+\begin{align}
+  \tilde{\Pi}_{ii} - \hat{k}_l\tilde{\Pi}_{lm}\hat{k}_m &= \frac{\aAsym}{2}\sum_i\frac{1-\hat{k}_i^2}{\sigma_i^2}\\
+  3\hat{k}_l\tilde{\Pi}_{lm}\hat{k}_m - \tilde{\Pi}_{ii} &= -\aAsym\left(\sum_i\frac{3\hat{k}_i^2-1}{2\sigma_i^2} - \frac{k^2}{2}\right)
+\end{align}
+    {\bf Reexpress these in terms of basic matrix invariants, trace, trace of square and determinant}
+    
+
+From which we can easily compute the SVT decomposition
+\begin{subequations}
+  \begin{align}
+    \Pi_{ij}^{\rm scalar} &= \frac{\delta_{ij}}{2}\aAsym\left(\sum_i\frac{1-\hat{k}_i^2}{2\sigma_i^2} \right) + \frac{\hat{k}_i\hat{k}_j}{2}\aAsym\left(\sum_i\frac{3\hat{k}_i^2-1}{2\sigma_i^2}-\frac{k^2}{2}\right)\\
+    \Pi_{ij}^{(V)} &= \\
+    \Pi_{ij}^{(T)} &=
+  \end{align}
+\end{subequations}
+
+
+\subsection{Discrete Result}
+\begin{equation}
+  \pi_{ij} = \frac{e^{-\sum_i\frac{x_i^2}{\sigma_i^2}}}{\sigma_i\sigma_j}e^{-\frac{dx_i^2}{2\sigma_i^2}-\frac{dx_j^2}{2\sigma_j^2}}\frac{\sigma_i}{dx_i}\frac{\sigma_j}{dx_j}\sinh\left(\frac{x_idx_i}{\sigma_i^2}\right)\sinh\left(\frac{x_jdx_j}{\sigma_j^2}\right)
+\end{equation}
+
+\begin{equation}
+  \tilde{\pi}_{ij}({\bf k}) = \pi^{3/2}(\Pi_i\sigma_i)e^{-\frac{1}{4}\sigma_i^2k_i^2}
+\end{equation}
+\begin{subequations}
+\begin{align}
+  \tilde{\pi}_{ii} &= \\
+  \hat{k}_l\tilde{\pi}_{li} &= \\
+  \hat{k}_l\tilde{\pi}_{lm}\hat{k}_m &= 
+\end{align}
+\end{subequations}
+
+
+\section{Perturbations from Spherical Harmonic Perturbations to Sphericity}
+
+\section{Toy Model: Smoothed Spherical Top-Hat}
+Rather than the smoothly varying field concentration with only a single scale $\sigma$, we now consider a hierarchical concentration characterized by a boundary layer and an overall size
+\begin{equation}
+  \phi({\bf x}) = \tanh\left(w^{-1}[r-R_0]\right)
+\end{equation}
+with $w$ and $R_0$ parameters.
+{\bf Perhaps better to use a breather profile to avoid singular derivative at the origin}.
+Since this configuration is spherically symmetric, it should not produce any gravitational radiation.
+However, we are particularly interested with how inadequate resolution of the boundary layer of width $w$ can source graviational waves, even if the overall radius of the structure $R_0$ is properly resolved.
+{\bf With bubbles, for example, this effect modifies propagation speed of the expanding bubble wall, and leads quickly to a very visible effect simply from systematic numerical errors.}
+
+
+
+\section{Discretisation Schemes}
+\subsection{Off-Lattice Definitions}
+
+\subsection{Action-Derivable Definitions}
+Here we consider an alternative definition of the discrete operator $\pi_{ij}$, that can be derived from a discrete action formulation of the fields.
+{\bf Put in action to quadratic order in $h_{ij}$, vary, show how this operator pops out}.
+Suppose we use finite-difference Laplacian stencil
+\begin{equation}
+  L[\phi](x_i) \equiv \sum_\alpha c_\alpha\left(\phi_{i+\alpha}-\phi_i\right) \, .
+\end{equation}
+Once this is chosen, we are no longer free to choose the discretisation of $(\nabla\phi)^2$ or the discrete equations of motion will not follow from either the variation of a discrete action or from a discrete Hamiltonian.
+This is obvious, since in the action only one differential operator $(\nabla\phi)^2$ appears, which means that $\nabla^2\phi$ is not independent of this definition.
+The appropriate definition satisfying summation by parts is
+\begin{equation}
+  (\nabla\phi)^2(x_i) \to D_2[\phi](x_i) \equiv \sum_\alpha \frac{c_\alpha}{2}\left(\phi_{i+\alpha}-\phi_i\right)^2 \, .
+\end{equation}
+{\bf check signs.}
+Based on this, it is reasonable to instead discretise as follows {\bf fix this so it's correct}
+\begin{equation}
+  \nabla_i\phi\nabla_j\phi(x_i) \to %\sum_{\alpha}\frac{c_\alpha}{2}\left(\phi_{i+\alpha}-\phi_i\right)\left(\phi_{i+}-\phi_i\right)
+\end{equation}
+so that we obtain
+\begin{equation}
+  \mathrm{Tr}(\partial_i\phi\partial_j\phi) = D_2[\phi](x_i)
+\end{equation}
+consistent with the definition required to conserve energy on the lattice.
+
+\subsection{Symmetric Derivatives}
+\begin{align}
+  \tilde{\pi}_{xx}({\bf k}) &= \frac{\pi^{3/2}\sigma_x\sigma_y\sigma_z}{2}e^{-\frac{1}{4}\sum_i\sigma_I^2 k_i^2}\frac{1}{\sigma_x^2}\left(\frac{\sigma_x}{dx}\right)^2\left(\cos(k_xdx) - e^{-\frac{dx^2}{\sigma_z^2}}\right) \\
+  \tilde{\pi}_{xy}({\bf k}) &= -\pi^{3/2}\left(\sigma_x\sigma_y\sigma_z\right)e^{-\frac{1}{4}\sum_i\sigma_I^2 k_i^2}\frac{1}{\sigma_x\sigma_y}\frac{\sigma_x}{dx}\sin\left(\frac{k_xdx}{2}\right)\frac{\sigma_y}{dy}\sin\left(\frac{k_ydy}{2}\right)e^{-\frac{dx^2}{4\sigma_x^2}-\frac{dy^2}{4\sigma_y^2}}
+\end{align}
+
+\section{Random Thoughts}
+\begin{itemize}
+\item If statistically we only get one or two oscillons per simulation volume, and you really think that the signal they produce is real, then you have to run many simulations in order to extract the signal produced by the oscillons themselves in order to fairly sample the random population of oscillons that will be produced.
+\item This calculation is probably more efficient in spherical coordinates.  Do all the necessary tensor transforms.
+\end{itemize}
+    
+\end{document}
