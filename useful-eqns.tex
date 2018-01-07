@@ -1,0 +1,91 @@
+\documentclass{revtex4}
+\usepackage{amsmath,amssymb}
+
+\input{mynotation}
+
+\begin{document}
+
+\section{Appendix: Modifed Projectors for Discretum Derivatives}
+
+\section{Appendix: Useful Relations}
+This just summarizes a collection of useful formulae so I'm not constantly rederiving them.
+
+\subsection{Continuum Projectors}
+\begin{equation}
+  P_{ij} \equiv \delta_{ij} - \hat{k}_i\hat{k}_j
+\end{equation}
+which satisfy
+\begin{subequations}
+\begin{align}
+  P_{il}\kzero_l\kzero_j &= \kzero_i\kzero_j - \hat{k}_i\kzero_j\kone \\
+  P_{il}\kzero_l\kzero_j\delta_{lj} &= \\
+  P_{ij}\kzero_i\kzero_j &= \kzero^2 - \kone^2 \\
+  P_{ij}\kzero_i\kzero_j\delta_{ij} &= \, .
+\end{align}
+\end{subequations}
+Combining, we obtain
+\begin{subequations}
+\begin{align}
+  \proj^{(T)}_{ij,lm}\delta_{lm} &= 0 \\
+  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m &=  \\
+  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m\delta_{lm} &= \, .
+\end{align}
+\end{subequations}
+
+\subsection{Discrete Factorized Projectors}
+Here, let's instead use
+\begin{equation}
+  Q_{ij} \equiv \delta_{ij} - \frac{\kzero_i\kzero_j}{\kzero^2}
+\end{equation}
+to contstruct our TT projection operator
+\begin{equation}
+  \proj^Q_{ij,lm} \equiv Q_{il}Q_{jm} - \frac{1}{2}Q_{ij}Q_{lm}
+\end{equation}
+We then have
+\begin{subequations}
+\begin{align}
+  \proj^Q_{ij,lm}\delta_{lm} &= 0 \\
+  \proj^Q_{ij,lm}\kzero_l\kzero_m &= 0 \\
+  \proj^Q_{ij,lm}\kzero_l\kzero_m\delta_{lm} &= \\
+  \proj^Q_{ij,lm}C_l\kzero_l\kzero_m &= 
+\end{align}
+\end{subequations}
+
+\subsection{Trace Squared}
+Suppose we have
+\begin{equation}
+  T_{ij} = C_i\delta_{ij}
+\end{equation}
+Then we obtain (w/ continuum projectors)
+\begin{equation}
+  T_{ji}^*\mathcal{O}_{ij,lm}T_{lm} = \sum_i |C_i|^2(1-2\hat{k}_i^2) + \left|\sum_i C_i\hat{k}_i^2\right|^2 - \frac{1}{2}\left|\sum_i C_i(\hat{k}_i^2-1)\right|^2 \, .
+\end{equation}
+This assumes (can probably relax some of these)
+\begin{enumerate}
+\item Real valued unit $k$ vectors
+\item $\mathcal{O}_{ij,lm}^* = \mathcal{O}_{ij,lm}$
+\end{enumerate}
+Consider the special case of $C_i = \kzero_i^2$ (i.e.\ $\kzero_i\kzero_j\delta_{ij}$ terms).
+Then we obtain
+\begin{equation}
+  \sum \kzero_m^4(1-2\hat{k}_m^2) + \frac{\ktwo^4}{2} - \frac{\kzero^4}{2} + \kzero^2\ktwo^2 \, .
+\end{equation}
+Suppose we also have
+\begin{equation}
+  S_{ij} = A\tilde{k}_i\tilde{k}_j
+\end{equation}
+We then have the following contraction
+\begin{align}
+  S_{ij}\mathcal{O}_{ij,lm}T_{lm} &= \kzero_i\kzero_jP_{il}P_{jm}C_l\delta_{lm} - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right) \\
+  &= \sum \kzero_l^2C_l - 2\kone\sum C_l\kzero_l\hat{\kone}_l + \kone^2\sum\hat{k}_l^2C_l - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right)
+\end{align}
+
+Other useful special cases (in a form with obvious generalization)
+\begin{equation}
+  \kzero_i\kzero_j\mathcal{O}_{ij,lm}\kzero_l\kzero_m = \left(\kzero_iP_{ij}\kzero_j\right)^2 = \kzero^2-\kone^2
+\end{equation}
+\begin{equation}
+  \kzero_i\kzero_j\mathcal{O}_{ij,lm}\kzero_l\kzero_m\delta_{lm} = 
+\end{equation}
+
+\end{document}

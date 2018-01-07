@@ -1,3 +1,8 @@
+\usepackage{xifthen}
+% Combine these into one command
+\newcommand{\ud}[2][]{\ensuremath{\mathrm{d}^{\ifthenelse{\isempty{#1}}{}{#1}}\ifthenelse{\isempty{#2}}{}{#2}\,}}
+
+\newcommand{\myvec}[1]{\ensuremath{{\bf #1}}}
 \newcommand{\proj}{\ensuremath{\mathcal{P}}}
 \newcommand{\kvec}{{\bf k}}
 \newcommand{\xvec}{{\bf x}}
@@ -8,7 +13,13 @@
 \newcommand{\tijNoT}{\ensuremath{\mathcal{T}_{ij}}}
 \newcommand{\prof}{\ensuremath{A}}
 
-%%% Discrete wavenumbers
+%%% Effective wavenumbers
+\newcommand{\keffPhi}{\ensuremath{k_{{\rm eff},\phi}}}
+\newcommand{\keffH}{\ensuremath{k_{{\rm eff},h}}}
+\newcommand{\keffT}{\ensuremath{k_{{\rm eff},T}}}
+\newcommand{\keffProj}{\ensuremath{k_{\rm eff}^{{\rm (P)}}}}
+
+%%% Discrete wavenumbers for Gaussian section
 \newcommand{\kzero}{\ensuremath{\tilde{k}}}
 \newcommand{\kone}{\ensuremath{\kappa}}
 \newcommand{\ktwo}{\ensuremath{\bar{k}}}
