@@ -76,8 +76,8 @@ Suppose we also have
 \end{equation}
 We then have the following contraction
 \begin{align}
-  S_{ij}\mathcal{O}_{ij,lm}T_{lm} &= \kzero_i\kzero_jP_{il}P_{jm}C_l\delta_{lm} - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right) \\
-  &= \sum \kzero_l^2C_l - 2\kone\sum C_l\kzero_l\hat{\kone}_l + \kone^2\sum\hat{k}_l^2C_l - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right)
+  S_{ij}\mathcal{O}_{ij,lm}T_{lm} &= \sum \kzero_l^2C_l - 2\kone\sum C_l\kzero_l\hat{\kone}_l + \kone^2\sum\hat{k}_l^2C_l - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right) \\
+  &= \sum C_l(\kzero_l-\kone\hat{k}_l)^2 - \frac{1}{2}(\kzero^2-\kone^2)\left(\sum_l C_l(1-\hat{k}_l^2)\right) \, .
 \end{align}
 
 Other useful special cases (in a form with obvious generalization)
@@ -87,5 +87,40 @@ Other useful special cases (in a form with obvious generalization)
 \begin{equation}
   \kzero_i\kzero_j\mathcal{O}_{ij,lm}\kzero_l\kzero_m\delta_{lm} = 
 \end{equation}
+
+\subsection{Expansion of Effective Wavenumbers in $k$}
+Here we expand our three effective wavenumbers for the combination of factorized $T_{ij}$ stencil and continuum projection operator in terms of the fraction of the Nyquist wavenumber we are looking at.
+\begin{subequations}
+  \begin{align}
+    \kzero_i &\equiv \frac{2}{\pi\knyq}\sin\left(\frac{\pi k\hat{k}_i}{2\knyq}\right) \\
+    \kone &\equiv \sum_i \hat{k}_i\kzero_i \\
+    \ktwo_i &\equiv \hat{k}_i\kzero_i = \frac{2\hat{k}_i}{\pi\knyq}\sin\left(\frac{\pi k\hat{k}_i}{2\knyq}\right)
+  \end{align}
+\end{subequations}
+To understand the effects of the discrete cutoff, it is convenient to expand these in
+\begin{equation}
+  \alpha \equiv \frac{kdx}{2} = \frac{\pi k}{2\knyq}
+\end{equation}
+\begin{subequations}
+\begin{align}
+  \kzero_i    &\approx k_i\left(1 - \alpha^2\frac{1}{6}\hat{k}_i^2 + \frac{1}{5!}\alpha^4 \hat{k}_i^4 \right)  \\
+  \kzero_i^2  &\approx k_i^2\left(1 -\frac{\alpha^2}{3}\hat{k}_i^2 + \frac{2}{45}\alpha^4\hat{k}_i^4 \right)  \\
+  \kzero^2    &\approx k^2\left(\sum\hat{k}_i^2 - \frac{\alpha^2}{3}\sum\hat{k}_i^4 + \frac{2\alpha^4}{45}\sum\hat{k}_i^6 \right) \\
+  \kzero^4    &\approx k^4\left(1-\frac{2\alpha^2}{3}\sum\hat{k}_i^4 + \frac{4\alpha^4}{45}\sum\hat{k}_i^6 + \frac{\alpha^4}{9}(\sum\hat{k}_i^4)^2\right) \\
+  \kone       &\approx k\left(1 - \frac{\alpha^2}{6}\sum\hat{k}_i^4 + \frac{\alpha^4}{5!}\sum\hat{k}_i^6 \right)   \\
+  \kone^2     &\approx k^2\left(1 - \frac{\alpha^2}{3}\sum\hat{k}_i^4 + \alpha^4\left[\frac{2}{5!}\sum\hat{k}_i^6 + \frac{1}{36}(\sum\hat{k}_i^4)^2\right]\right)  \\
+  \ktwo_i     &\approx k\left(\right)   \\
+  \ktwo_i^2   &= \hat{k}_i^2\kzero_i^2 \approx k^2\hat{k}_i^4\left(1-\frac{\kfrac^2}{3}\hat{k}_i^2 + \frac{2\alpha^4}{45}\hat{k}_i^4\right)  \\
+  \ktwo^2     &\approx k^2\left(\sum_i\hat{k}_i^4 - \frac{\kfrac^2}{3}\sum\hat{k}_i^6 + \frac{2}{45}\kfrac^4\sum\hat{k}_i^8 \right)
+\end{align}
+\end{subequations}
+Combining, we find
+\begin{subequations}
+  \begin{align}
+    \kzero^2-\kone^2 &\approx k^2\kfrac^4\frac{1}{36}\left(\sum\hat{k}_i^6 - (\sum\hat{k}_i^4)^2 \right)\\
+    \kzero^2-\ktwo^2 &\approx k^2\left(1-\sum\hat{k}_i^4\right) \\
+    \kzero_i^2-\kone\ktwo_i &\approx -\frac{\kfrac^2}{6}k^2\hat{k}_i^2\left(\hat{k}_i^2-\sum\hat{k}_i^4\right)
+  \end{align}
+\end{subequations}
 
 \end{document}

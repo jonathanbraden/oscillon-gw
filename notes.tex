@@ -22,6 +22,8 @@ In this paper, we will not worry about how the dynamics of the fields themselves
 
 \jb{Add estimate of $\rho_c$ to get overall amplitude of signal when oscillons dominate the background.  This changes the scaling with amplitude in the new Antusch paper since it's not independent of things like the width of the oscillons}
 
+\jb{Disrete $\phi$ evolution will cause $\omega$ to be time-dependent as well.  This makes estimating the effects of the discrete grid difficult since we produce wavenumbers $k \sim \omega a$, and corrections look like $\omega / k_{\rm nyq}$ to various powers, which can scale purely through the modified dispersion of the discrete $\phi$ stencil.}
+
 \jb{Add note that scaling with number of oscillons depends on whether or not they dominate energy density.  If they do, the $N_{\rm osc}$ enhancement cancels with critical density, otherwise there is a suppression factor for density in oscillons to overall energy density.}
 \section{Pointless Notes}
 Rough outline of some steps to take:
@@ -101,7 +103,9 @@ The former has the advantage of being explicit and not requiring temporary stora
 At any rate, for any reasonable choice of integration scheme, improved temporal accuracy can be achieved through decreased time step at the cost of additional CPU cycles.
 Improved spatial resolution, however, requires either implementation of an improved discretization scheme, or else an increase in the amount of memory to store the simulation data.
 This is a far more severe computational burden, so in many applications the spatial convergence is the key consideration.
-Furthermore, maintaining an equivalent level of temporal accuracy requires holding the Courant step $dx/dt$ fixed, so a decreased grid-spacing must be accompanied by a corresponding decrease in $dt$. {\bf some comment about conditions for this to be true.  When lattice sims are needed and all modes are excited and interacting this is usually true.}
+As well, on modern computer and cluster architectures, communication and memory access costs tend to be the limiting factors in computational speed, which are themselves often determined by the total amount of memory required by a simulation.
+Similarly, when running simulations using GPGPU computing, transfer of data between the internal GPU memory and the CPU is orders of magnitude slower than evaluation of computational kernels, and communication between various levels of the GPU memory cache are often the speed limiting step.
+Furthermore, maintaining an equivalent level of temporal accuracy requires holding the Courant step $dx/dt$ fixed, so a decreased grid-spacing must be accompanied by a corresponding decrease in $dt$. \jb{Some comment about conditions for this to be true.  When lattice sims are needed because a large dynamical range of interacting modes are relevant, this is the case.  When some background evolution provides the relevant timescale (say during early stages of preheating), it may not be the case.  However, lattice sims aren't needed for the linear stage (with a minor extension of the usual initial conditions).}
 
 Examining the preceding formalism, we see that discrete derivatives must be defined in four distinct places:
 \begin{enumerate}
@@ -217,6 +221,7 @@ For example, with the stencil
 we have
 \jb{write what this looks like.  Product of sines and cosines.}
 \jb{Is $\nabla^{-2}\nabla^{-2} = \nabla^{-4}$ in the discrete case?}
+\jb{Discrete derivatives don't satisfy the product rule or chain rule, so many of the manipulations used to obtain a factorized operator are extremely suspicious outside of the continuum since they rely of commuting $k$'s in momentum space or derivatives in real space.}
 
 \section{Gravitational Waves from Sources of Fixed Frequency}
 We now compute GWs produced in an expanding FRW background.
@@ -260,13 +265,14 @@ We thus have
 \begin{equation}
   \tij({\bf x},t) = \tijNoT({\bf x},t)\cos^2(\omega t) \, .
 \end{equation}
-The extension to multiple harmonics is straightforward.
+Consideration of multiple harmonics is straightforward, although somewhat messier.
+Similarly, the extension to time varying frequencies $\omega(t)$ is obvious but requires more involved derivations than those before.
 
 The trigonometric functions can be reexpressed as
 \begin{subequations}
 \begin{align}
-  \cos k\tau\cos^2\omega t &= \frac{1}{4}\cos(2\omega t-k\tau) + \frac{1}{4}\cos(2\omega t+k\tau) + \frac{1}{2}\cos k\tau \\
-  \sin k\tau\cos^2\omega t &= \frac{1}{4}\sin(2\omega t-k\tau) + \frac{1}{4}\sin(2\omega t+k\tau) + \frac{1}{2}\sin k\tau \, .
+  \cos k\tau\cos^2\omega t &= \frac{1}{4}\cos(k\tau-2\omega) + \frac{1}{4}\cos(2\omega t+k\tau) + \frac{1}{2}\cos k\tau \\
+  \sin k\tau\cos^2\omega t &= \frac{1}{4}\sin(k\tau-2\omega) + \frac{1}{4}\sin(2\omega t+k\tau) + \frac{1}{2}\sin k\tau \, .
 \end{align}
 \end{subequations}
 The dominant contributions to the integrals come from the sinusoids of $2\omega t - k\tau$, which have stationary points in their evolution when
@@ -275,18 +281,26 @@ The dominant contributions to the integrals come from the sinusoids of $2\omega 
 \end{equation}
 Assuming smooth (non-oscillatory) behaviour in $a$ and $\tijNoT$, we can approximate
 \begin{equation}
-  \int_{\tau_i}^\tau d\tau' a(\tau')\tijNoT(\kvec,\tau')\cos k\tau'\cos^2\omega t \approx \sqrt{2\pi}\frac{a_k\tijNoT(\kvec,\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\cos\left(2\omega t_k -k\tau_k-\frac{\pi}{4}\right)\Theta(\tau - \tau_k)
+  \label{eqn:cosine-int}
+  \cosInt \equiv \int_{\tau_i}^\tau d\tau' a(\tau')\tijNoT(\kvec,\tau')\cos k\tau'\cos^2\omega t \approx \sqrt{2\pi}\frac{a_k\tijNoT(\kvec,\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\cos\left(k\tau_k - 2\omega t_k -\frac{\pi}{4}\right)\Theta(\tau - \tau_k)\Theta(\tau-\tau_i)
 \end{equation}
 and
 \begin{equation}
-  \int_{\tau_i}^\tau d\tau' a(\tau')\tijNoT({\kvec},\tau')\sin k\tau'\cos^2\omega t \approx \sqrt{2\pi}\frac{a_k\tijNoT(\kvec,\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\sin\left(2\omega t_k -k\tau_k-\frac{\pi}{4}\right)\Theta(\tau - \tau_k)
+  \label{eqn:sine-int}
+  \sinInt \equiv \int_{\tau_i}^\tau d\tau' a(\tau')\tijNoT({\kvec},\tau')\sin k\tau'\cos^2\omega t \approx \sqrt{2\pi}\frac{a_k\tijNoT(\kvec,\tau_k)}{4\sqrt{2\omega a^2_kH_k}}\sin\left(k\tau_k - 2\omega t_k -\frac{\pi}{4}\right)\Theta(\tau - \tau_k)\Theta(\tau_i-\tau)
 \end{equation}
 where $\Theta(x)$ is the Heaviside step function.
 An improved estimate of the amplitude can be obtained by more carefully treating the time-dependence of $\tijNoT$ and $a$ around the stationary point.
-\jb{Check sign of phase shift.  Improve this to capture the time-dependence in non-oscillatory integrand better for a precise determination of the overall amplitude.}
+Similarly, the oscillations and small changes to the overall amplitude can be obtained by accounting for boundary terms and subleading corrections in the asymptotic expansion.
+\jb{Improve this estimate to include subleading behaviour in $k$.}
 Notice the tremendous simplification that occurs in the temporal integrals due to the narrow and fixed bandwidth of the source.
 If the source instead contains many frequencies, then interference between GWs produced at different times can be significant and the source will not in general factor out of the expression.
-\jb{Add window function for early times.  Note that if we integrate for too long, the $\cos\tau$ and $\sin\tau$ terms might also contribute instead of simply integrating to zero on average.  However, in this limit we might also need to use more accurate Green's functions and include the other corrections from the Hubble in $\rho_{\rm GW}$.}
+\jb{Note that if we integrate for too long, the $\cos\tau$ and $\sin\tau$ terms might also contribute instead of simply integrating to zero on average.  This isn't an issue in any case I've checked so far.  However, in this limit we might also need to use more accurate Green's functions and include the other corrections from the Hubble in $\rho_{\rm GW}$.  This seems to be completely negligible over reasonable time-scales.}
+
+\begin{figure}
+  \includegraphics[width=3.375in]{{{stationary-phase-check}}}
+  \caption{Some plots illustrating the accuracy of the stationary phase approximation and various improvements to it.  Here, we have fixed the background cosmology to be fixed with $w=0$ and $H_0 = 0.1\omega$, and study the integrals~\eqref{eqn:} for $\omega^{-1}k = 8$.  We show the results for the $\cos$ (\emph{red}) and $\sin$ (\emph{blue}) integrals separately, and for the squared sum (\emph{black}).  The light solid line is the full integral, the dark solid line is keeping only th $\cos(k\tau - 2\omega t)$ (or $\sin$) contribution, and the dashed lines are the analytic approximations~\eqref{eqn:cosine-int}and~\eqref{eqn:sine-int}.  For simplicity, we have taken $\tijNoT$ to have no time dependence.  Our approximation accurately captures the behaviour averaged over a few oscillations of the waves. \jb{Add step function behaviour in.  Improve analytic estimate.  Do the same thing for some scaling profiles, in particular $a^{-1}$ behaviour will damp the post production oscillations.}}
+\end{figure}
 
 Here the subscript ${}_k$ indicates that the given quantity is evaluated at the conformal time $\tau_k$ when
 \begin{equation}
@@ -332,19 +346,22 @@ with
 \end{equation}
 In the above, we have defined
 \begin{equation}
-  \frac{1}{(2\pi)^3}\int d\Omega \sum_{i,j}\left|\tijNoT\right|^2 = \phi_0^2\sigma^2 \tilde{F}_0 \, .
+  \frac{1}{(2\pi)^3}\int d\Omega \sum_{i,j}\left|\tijNoT\right|^2 = \phi_0^4\sigma^2 \tilde{F}_0 \, ,
 \end{equation}
+with $\phi_0$ a parameter characterizing the amplitude of the field oscillations inside the oscillon, and $\sigma$ the width of the oscillon profile. \jb{This assumes only one scale over which the profile varies.}
 With the case of a collection of oscillons in mind, we notice that for field profile of fixed physical size ($\beta=1$) and matter dominated expansion ($w=0$), a spectral slope greater that $\frac{5}{2}$ requires the presence of a \emph{growing} source.
+Furthermore, in order for the amplitude at the cutoff ($k=2\omega a$) to increase with time, we must have
+\begin{equation}
+  \frac{3}{2} + \frac{9}{2}w - 2(\beta-1) - 4\alpha > 0 \, .
+\end{equation}
 \jb{Fix the step functions.}
+\jb{Reexpress the normalization of $k$ to $a^\beta$ instead of just $a$?}
 
 \jb{This also matches the result in the Antusch paper except for a $10\%$ error in the amplitude for the asypherical Gaussian, once their result for $\kappa$ in (4.19) is corrected (doing any sort of linear regression with various fixes to the obviously incorrect fourth entry in their Table 1 gives something close to 9.32 instead of their answer).}
-\begin{equation}
-  \Omega_{\rm GW} = \mathcal{N}\frac{1}{6M_P^4H_0^2V}a^{3w-1}\frac{\pi\omega^2}{2H_0}\left(\frac{k_{\rm pivot}}{2\omega}\right)^{\frac{9}{2}+\frac{3}{2}w}\left(\frac{k}{k_{\rm pivot}}\right)^{\frac{5}{2}+\frac{3}{2}w}\int d\Omega \sum_{i,j}\left|\tij(k,0)\right|^2
-\end{equation}
+
 \jb{Generalize this to time-dependent $\omega$ since the derivation is essentially unchanged.}
 \jb{Generalize the scaling to two arbitrary functions instead of $\alpha$ and $\beta$ for the since frequency case.}
-
-\jb{As it relates to the PRL, discretum effects cause the cutoff in the spectrum to move to the right, and since the source is presumably increasing in amplitude as the finite-differencing effects increase, the slope of the ``peak'' will also increase.  This is clearly what qualitatively happens in the PRL plot.  This is of course ignoring errors in time-stepping.}
+\jb{Do a quick redo of the ``semi-analytic'' calculations from the Antusch paper to see if there is any oscillation in the amplitude as the output scale factor is adjusted, or if these oscillations in the amplitude on top of the stationary phase approximation average out when doing the angular integrals.  The only angular dependence that has to be pulled inside the integrals is the part appearing in the Gaussian.}
 
 \subsection{GWs from a collection of localized sources}
 The above result holds for an arbitrary scalar field profle $\prof({\bf x},t)$ that oscillates with a single characteristic frequency.
@@ -398,23 +415,50 @@ More generally, for $N$ objects we define the $N$ separations $\Delta\xvec_i \eq
 \end{equation}
 In the special case that the individual locations $x_n$ are drawn uniformly in the interval $[0,L]$ and $k = 2\pi i / L$, then each individual phase factor is a Gaussian Random Deviate with unit variance \jb{or is it 2 (Check)?}.
 Therefore, the ensemble average of $F_N$ in this case is given by the number of individual blobs $N$, with the stochastic locations of the individual sources in a given realization leading to oscillations around this mean rescaling.
+This basic structure is modified when the oscillon locations have non-trivial correlations (which we expect to be true in many cases of dynamical interest, such as oscillons generated through nonlinear fracturing after parametric resonance).
+\jb{Using peak statistics of a GRF, can get an approximation for the correlations of the oscillons by getting the peak-peak correlations constrained to be above a threshold and with some band of widths.}
 \jb{Change this to 3D not 1D.  Also, ensemble averaging is probably not very useful from a lattice sim viewpoint, but is relevant to a detector with no directional sensitivity.}
 
 \jb{See if the expansion $e^{ik\cos\theta} = \sum_{n=-\infty}^\infty i^nJ_n(k)e^{in\theta}$ in Bessel functions is useful when performing the angular integrals.  Then comment that it will be somewhat like a realization of a Gaussian random field in ${\bf k}$ if there are many oscillons.  The key is that we get various local minima and maxima, but these generally have wavelengths of order the gridding in k-space and don't lead to dramatic changes in the slope, only sampled oscillations in it.}
 
-\jb{Now add some scalings for $\Omega_{\rm GW}$ given a collection of oscillons.  Show that it only scales with the number of oscillons if they are a subdominant part of the energy density.  Factor it into a piece that depends on the oscillon profile (i.e. the potential), and a piece dependent on the density (i.e. initial conditions and subsequent evolution).  Consider case of $\omega\sigma \sim 1$ and only a single width characterizing oscillon (i.e. no flat tops).}
+\subsubsection{Parameter dependence}
+\jb{Show how it scales with density and oscillon properties.}
+Let's now consider how we expect the signal to scale with various properties of the oscillons.
+For simplicity, here we will assume that all of the oscillons have a single profile, characterized by an overall oscillation amplitude $\phi_0$, width $\sigma$, and oscillation frequency $\omega$.
+Furthermore, we assume that the oscillation frequency and width satisfy $\omega\sigma \sim 1$.
+Thus, we do not consider flat-top oscillons, or oscillons in potentials
+\jb{Can relax a bit, since the energy of an oscillon is the key thing.  The last relation between $\omega$ and $\sigma$ is needed in the energy estimate.}
+We can then classify the resulting population of oscillons by their number density
 \begin{equation}
-  E_{osc} \sim \phi_0^2\sigma^{-2}
+  n_{\rm osc} = \frac{N_{\rm osc}}{a^3V}
 \end{equation}
+and energy
 \begin{equation}
-  \rho_{osc} \sim n_{osc}E_{osc}
+  E_{\rm osc} \sim \phi_0^2\omega^2\sigma^3
 \end{equation}
+where $V$ is the comoving volume.
+This characterization is convenient, since $E_{\rm osc}$ will be a property solely of the potential under consideration, while $n_{\rm osc}$ encodes information about the initial conditions and complex multi-oscillon interactions.
+\jb{Make sure to comment about what is being fixed and what is varied.  Fix notation of $\sigma$ to just capture the total size of the oscillon, not necessarily a thin boundary layer.  Then use a different scale in the definition of $\tilde{F}_0$ above since that has gradients in it.}
+
+We will tackle two limiting cases of interest: the oscillons form the dominant energy component in the Universe, and the oscillons are subdominant to some other component.
+For this purpose, it is convenient to define the fractional energy density of the oscillons emitted as gravitational waves
 \begin{equation}
-  \Omega_{\rm GW} = \frac{\rho_{osc}}{\rho_{tot}}\frac{1}{\rho_{osc}}\frac{d\ln\rho_{\rm GW}}{d\ln k} \equiv \frac{\rho_{osc}}{\rho_{tot}}\Omega_{\rm GW}^{{\rm osc}}
+  \Omega_{\rm GW}^{\rm osc} \equiv \frac{1}{\rho_{osc}}\frac{d\ln\rho_{\rm GW}}{d\ln k} = \frac{3H^2M_P^2}{\rho_{\rm osc}}\Omega_{\rm GW}
 \end{equation}
+where $\rho_{\rm osc}$ is the energy density in oscillons.
+We have
+\begin{equation}
+  \rho_{\rm osc} = n_{\rm osc}E_{\rm osc} \sim (n_{\rm osc}a^3)\omega^2\phi_0^2 \, .
+\end{equation}
+Consider first the case where $\rho_{\rm tota} \approx \rho_{\rm osc}$, so that $w=0$ and
+\begin{equation}
+  H_0^3V \sim N_{\rm osc}\sqrt{n_{\rm osc}\sigma^3}
+\end{equation}
+\jb{This changes for time-dependent $N_{\rm osc}$.  Fix various factors of $a$.}
+
 $N_{\rm osc}$ dependence cancels in $\Omega_{\rm GW}^{\rm osc}$, so scaling with $N_{\rm osc}$ for \emph{fixed oscillon properties} requires subdominant oscillon component and a suppressed signal to start with.
 $\Omega_{\rm GW}$ similarly scales as $\phi_0^2$ not $\phi_0^4$.
-\jb{How does the $H_0$ from the $\eta$ integral change this argument}
+\jb{How does the $H_0$ from the $\eta$ integral change this argument.  Seems to indicate that when the oscillons are the dominant contribution, the signal actually decreases a $N_{\rm osc}^{-1/2}$, but there are some $a$'s floating around that I need to be careful with.}
 
 \section{Gravitational Waves in the Discretum}
 Having established the general formalism for production of gravitational waves by long-lived scalar sources, we now investigate how various finite-differencing approximations may influence numerically obtained results.
@@ -504,6 +548,8 @@ The modified dispersion relationship from the discrete Laplacian thus leads to t
 \end{enumerate}
 In particular, for sources of fixed physical size such as those studied above, the second effect will cause the cutoff in the GW spectrum to shift to the right in physical wavenumbers as the produced waves begin to approach the Nyquist frequency.
 
+\jb{As it relates to the PRL, discretum effects cause the cutoff in the spectrum to move to the right, and since the source is presumably increasing in amplitude as the finite-differencing effects increase, the slope of the ``peak'' will also increase.  This is clearly what qualitatively happens in the PRL plot.  This is of course ignoring errors in time-stepping.}
+
 \subsection{Projection of $T_{ij}$}
 
 \subsection{Grid Based Evaluation: Binning}
@@ -549,10 +595,12 @@ Therefore, if we initialize our initial field fluctuations taking this modified 
 
 \section{Example: Gaussian Field Profile}
 With the basic formalism in place, we now compute the effects of numerical discretization on some simple field profiles motivated by the dynamics of nonlinear scalar fields.
-Before turning to the question of dynamically evolving structure and exploring the issue of consistency between time evolution derivative stencils and projection operations,
-here we first explore a simple non-dynamical toy model to qualitatively understand the projection of localized field structures into gravitational waves.
+We will be able to explore the interactions between the various effective wavenumbers introduced by various discretization schemes, and how they eventually combine to give a numerically computed gravitational wave signal.
+The analysis we present will very accurately capture the effects of discretization in the $h_{ij}$ Laplacian, definnition of $T_{ij}$ and TT projection operator.
+By choosing an ansatz for $\phi$, we cannot to study in precise detail how discretization effects in the field evolution eventually feed into the GW signal.
+However, the qualitative effects of the finite-differencing are to enumerate, so even this simplified analysis will allow us to gain valuable insight into this more complicated question as well.
 
-First consider a Gaussian field profile
+As a first case, consider a Gaussian field profile
 \begin{equation}
   \phi(x,y,z) = e^{-\sum\frac{x_i^2}{2\sigma_i^2}}
 \end{equation}
@@ -597,6 +645,8 @@ We readily find that $\Pi_{ij}$ is purely scalar as expected, with
   = \frac{\aSym}{2}\delta_{ij}\left(1-\frac{\sigma^2k^2}{6}\right) - \aSym\left(\hat{k}_i\hat{k}_j-\frac{1}{3}\delta_{ij}\right)\frac{\sigma^2 k^2}{4}
   = \tilde{\Pi}_{ij} \, .
 \end{equation}
+Therefore, as required by the spherical symmetry, in the absence of numerical errors this field profile will not produce any gravitational radiation.
+This, provides and important null test for any numerical procedure.
 
 \subsection{Factorized Stress-Eenergy Tensor}
 Now, let's consider the effects of using a finite-difference approximation to compute the TT part of the stress-energy tensor.
@@ -609,6 +659,10 @@ In order to illustrate the issues, when performing analytic calculations we will
 \begin{equation}
   \label{eqn:deriv_order_1}
   D_x[\phi](x) = \frac{1}{2dx}\left(\phi(x+dx,y,z)-\phi(x-dx,y,z)\right) \, .
+\end{equation}
+The effective wavenumber associated with this discrete stencil is easily seen to be
+\begin{equation}
+  k_{{\rm eff},i} = \frac{1}{dx}\sin\left(k_idx\right) = \frac{\knyq}{\pi}\sin\left(\pi\frac{k_i}{\knyq}\right) \, .
 \end{equation}
 Let's denote the stress-tensor obtained this was as
 \begin{equation}
@@ -624,7 +678,7 @@ with
   P^{d}_{ij} = \delta_{ij} - \frac{\kzero_i\kzero_j}{\kzero^2} \, .
 \end{equation}
 
-Note that this choice of discretisation is already inconsistent with typical evolution schemes for both $\phi$ and $h_{ij}$ which often rely on second order accurate and second order isotropic Laplacian stencils.   However, the trace of $\pi_{ij}$ does not match the self-consistent definition of the isotropic pressure that is needed to evolve the Hubble constant.
+Note that this choice of discretization is already inconsistent with typical evolution schemes for both $\phi$ and $h_{ij}$ which often rely on second order accurate and second order isotropic Laplacian stencils.   However, the trace of $\pi_{ij}$ does not match the self-consistent definition of the isotropic pressure that is needed to evolve the Hubble constant.
 Neverless, as our point is to illustrate how discretization errors lead to numerical artifacts, we will proceed.
 \jb{Insert a definition that's actually consistent with the trace being the isotropic pressure.  In the section on field dynamics, show how the mismatch in discrete derivs already spoils the projection for linear fluctuations.}
 
@@ -653,8 +707,9 @@ We can combine these expressions as
 \begin{equation}
   \tilde{\pi}_{ij} = \frac{\mathcal{A}}{2}\left(\frac{\sigma}{dx}\right)^2\delta_{ij}\left[\left(1-e^{-\frac{dx^2}{\sigma^2}}\right) - \frac{1}{2}\left(1-e^{-\frac{dx^2}{2\sigma^2}}\right)4\sin^2\left(\frac{k_idx}{2}\right)\right] - \frac{\mathcal{A}}{4}\left(\frac{\sigma}{dx}\right)^2e^{-\frac{dx^2}{2\sigma^2}}2\sin\left(\frac{k_idx}{2}\right)2\sin\left(\frac{k_jdx}{2}\right)
 \end{equation}
-
 Comparing the analytic result with the finite-difference approximation, we see that discretisation errors enter in two distinct ways: $k_idx$-dependent contributions resulting from the non-trivial Fourier space structure of the spatial stencils, and $\sigma^{-1}dx$ contributions arising directly from discretisation errors in the finite-difference derivatives.
+It is also worth noting that the nonlinear nature of $\pi_{ij}$ has at some level changed the effective wavenumber that we would have naively associated with our finite-differencing stencils for the derivatives.  This interpretation is not completely clean, since overall scaling factors that depend explicitly on $dx$ also appear, but it nonetheless serves the illustrate some of the pitfalls involved with discretization.
+\jb{Find another way to write this so that the linear and nonlinear effects are manifestly separated.}
 
 To separate the effects of loss of resolution of the localised Gaussian versus distortion effects of the finite-differencing on large wavenumbers, it is convenient to introduce the following definitions
 \begin{equation}
@@ -707,52 +762,53 @@ As before, we compute
     &= \left(\frac{\aSym}{2}\right)^2\left(f^2 - f\kappa^2 + \frac{\kappa^2\tilde{k}^2}{4}\right) - \left(\frac{\aSym}{4}\right)^2\left(1-e^{-\frac{dx^2}{\sigma^2}}\right)\kone^2\kzero^2 + fg\left(\frac{\aSym}{2}\right)^2\left(\kone^2-\ktwo^2\right) + \left(\frac{\aSym}{4}\right)^2g^2\hat{k}_i^2\kzero_i^4 + \left(\frac{\aSym}{2}\right)^2e^{-\frac{dx^2}{2}}\frac{g}{2}\kone\hat{k}_i\kzero_i^3  \, .
   \end{align}
 \end{subequations}
-Combining, we find that $f$ drops out of the final calculation as required and we obtain
-\begin{align}
-  \left|\tilde{\pi}^{(T)}_{ij}\tilde{\pi}_{ji}^{(T)}\right| &= \left(\frac{\aSym}{2}\right)^2\frac{1}{8}\left(\kzero^2-\kone^2\right)
-  - \left(\frac{\aSym}{4}\right)^2\left(1-e^{-\frac{dx^2}{\sigma^2}}\right)\left(\kzero^4+2\kone^2\kzero^2-\sum_i\kzero_i^4\right) \notag \\
-  + \left(\frac{\aSym}{4}\right)^2g^2 \, .
-\end{align}
-Alternatively, we can directly obtain the TT projection
-\begin{equation}
-  \tilde{\pi}_{ij}^{(T)} = -\frac{\aSym}{4}\left(1-g\right)\left[\left(\kzero_i-\kone\hat{k}_i\right)\left(\kzero_j-\kone\hat{k}_j\right) - \frac{1}{2}\left(\delta_{ij}-\hat{k}_i\hat{k}_j\right)\left(\kzero^2-\kone^2\right)\right] + \frac{\aSym}{4}\delta_{ij}
-\end{equation}
+
 \jb{Make the trivial modification to allow for a broader class of projection operators.}
-from which we obtain
+We can directly obtain the TT projection
+\begin{align}
+  \tilde{\pi}_{ij}^{(T)} &= -\frac{\aSym}{4}\left(1-g\right)\left[\left(\kzero_i-\kone\hat{k}_i\right)\left(\kzero_j-\kone\hat{k}_j\right) - \frac{1}{2}\left(\delta_{ij}-\hat{k}_i\hat{k}_j\right)\left(\kzero^2-\kone^2\right)\right] \notag \\
+  &+ \frac{\aSym}{4}g\left(\delta_{ij}\kzero_i^2 - (\delta_{il}\hat{k}_j+\delta_{jl}\hat{k}_i)\hat{k}_l\kzero_l^2 + \hat{k}_i\hat{k}_j\ktwo^2 - \frac{1}{2}(\delta_{ij}-\hat{k}_i\hat{k}_j)(\kzero^2-\ktwo^2)\right)
+\end{align}
+As well, it is straightforward to obtain the scalar and vector projections
+\begin{subequations}
+  \begin{align}
+    \tilde{\pi}_{ij}^{\rm scalar} &= \frac{1}{2}\delta_{ij}\mathcal{A}\left(f\left(\frac{dx^2}{2\sigma^2}\right) - g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 - \frac{1}{4}\left[ \tilde{k}^2 - e^{-\frac{dx^2}{2\sigma^2}}(\sum \bar{k}_i)^2\right]\right) \\
+       &- \frac{1}{2}\hat{k}_i\hat{k}_j\frac{\mathcal{A}}{4}\left(3e^{-\frac{dx^2}{2\sigma^2}}(\sum\bar{k}_i)^2 - \tilde{k}^2 + 3g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 \right) \\
+    \tilde{\pi}_{ij}^{(V)} &= \mathcal{A}\left(\frac{\sigma}{dx}\right)^2\frac{1}{2}\left[\hat{k}_i\hat{k}_j\sum_a\hat{k}_a2\sin\left(\frac{k_adx}{2}\right)\Sigma_a - \frac{1}{2}\left(\hat{k}_i2\sin\left(\frac{k_jdx}{2}\right)\Sigma_j + \hat{k}_j2\sin\left(\frac{k_idx}{2}\right)\Sigma_i\right) \right] \, .\\
+  \end{align}
+\end{subequations}
+We see that both vector and tensor contributions are generated, as expected.
+\jb{Fix this to remove the old notation I was using.}
+
+To apply our preceeding formalism, we now compute
 \begin{align}
   \left|\tilde{\pi}^{(T)}_{ij}\tilde{\pi}_{ji}^{(T)}\right| &= \frac{\aSym^2}{32}\left(1-g\right)^2\left(\kzero^2-\kone^2\right) \notag \\
   &+ 2\left(\frac{\aSym}{4}\right)^2\left(\sum\kzero_i^4 + \kone^2\ktwo^2 - 2\kone\sum\kzero_i^2\ktwo_i - \frac{1}{2}\left(\kzero^2-\kone^2\right)\left(\kzero^2-\ktwo^2\right) \right)g(1-g) \\
   &+ \left(\frac{\aSym}{4}\right)^2g^2\left(\sum_i\kzero_m^4\left(1-2\hat{k}_m^2\right) + \frac{\ktwo^4}{2} - \frac{\kzero^4}{2} + \kzero^2\ktwo^2\right) \notag \\
   &= \frac{\aSym^2}{32}\left(1-g\right)^2\left(\kzero^2-\kone^2\right) \notag \\
   &+ 2\left(\frac{\aSym}{4}\right)^2\left(\sum_l\left(\kzero_l^2-\kone\ktwo_l\right)^2 - \frac{1}{2}\left(\kzero^2-\kone^2\right)\left(\kzero^2-\ktwo^2\right) \right)g(1-g) \notag \\
-  &+ \left(\frac{\aSym}{4}\right)^2g^2\left(\right)
+  &+ \left(\frac{\aSym}{4}\right)^2g^2\left(\right) \\
+  &\approx \left(\frac{\aSym}{4}\right)^2\left[\frac{\left(1-g\right)^2}{2}\sigma^2k^2\kfrac^4\left(1-\left(\sum\hat{k}_i^4\right)^2\right) + 2\kfrac^4\sigma^4k^4g(1-g) + g^2\sigma^4k^4() \right]
 \end{align}
 \jb{Rewrite the $g^2$ term in some more obvious form.}
-{\bf We note that in this specific case, using the modified projector $\tilde{P}_{ij}\equiv \delta_{ij} - \frac{\kzero_i\kzero_j}{\kzero^2}$ in our definition of the TT projector would elimnate all but the term proportional to $\mathcal{O}_{ij,lm}\kzero_i\kzero_j\kzero_l\kzero_m\delta_{ij}\delta_{lm}$.  This is not entirely surprising as this definition is closely related to the corresponding Fourier transform of our finite-difference derivative.}
+In the final approximate equality we have expanded to leading order in $\kfrac \equiv \frac{\pi k}{2\knyq} = \frac{kdx}{2}$.
+This is useful when an exact approximation to the Laplacian is used to evolve $h_{ij}$.
+When a discrete approximation is used, on the other hand, and expansion in the corresponding $\keffH$ is more appropriate. \jb{Do this expansion.}
+Note that the use of a projector consistent with our discrete definition of $T_{ij}$ removes the contributions from the first two lines of this expression, but does not completely remove the third line.
+\jb{Check if this is actually true by computing explicitly the rather ugly operator.  Find a nice interpretation in terms of nonlinearity vs linearity if it exists.}
 
 We can now compute the inferred spectrum of gravitational waves that would be produced by an oscillating spherically symmetric Gaussian profile using the standard combination of finite-differencing definition of the stress-energy tensor and continuum projectors.
-This provides and important null test, since this configuration produces no gravitational waves.
+This provides an important null test, since this configuration produces no gravitational waves in the continuum.
 The reader should not interpret this as a precise model for the oscillon dynamics (which even if spherically symmetric may not have a Gaussian radial profile), but rather an important test case to illustrate the shortcomings of the standard approach.
 As well, we expect that up to $\mathcal{O}(1)$ corrections, this result should apply to the GW production from any spherically symmetric profile where the radial profile is well characterized by a single length scale.
 We will examine how the introduction of a second scale (effectively a boundary layer between the interior and exterior) of the profile modifies this result shortly.
 
-\subsection{}
 \jb{Show continuum integral result of angle averages, vs the discretely binned result evaluated at lattice momenta, since these are again different in principle.  Probably nicest to also show various effective k combinations and how the integrals look in the two approximations.  With discrete bins, also vary the bin size.  Probably best to also do the power spectrum estimation with some implied window function in the discrete case, c.f. my lattice code for appropriate coefficients.}
 
+\jb{Move this stuff somewhere more logical.}
 \begin{figure}
   \caption{Plotting the discrete version of the sum of a unit vector's components squared.  Show how absolutely awful it is once you get anywhere near the Nyquist.  In particular, find some notion of the asymmetry as a function of angle (maybe project onto various spherical harmonics?)}
 \end{figure}
-
-
-From this we obtain the various SVT components \emph{assuming the continuum based projection operators}.  We see that both vector and tensor contributions are generated
-\begin{subequations}
-  \begin{align}
-    \tilde{\pi}_{ij}^{\rm scalar} &= \frac{1}{2}\delta_{ij}\mathcal{A}\left(f\left(\frac{dx^2}{2\sigma^2}\right) - g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 - \frac{1}{4}\left[ \tilde{k}^2 - e^{-\frac{dx^2}{2\sigma^2}}(\sum \bar{k}_i)^2\right]\right) \\
-       &- \frac{1}{2}\hat{k}_i\hat{k}_j\frac{\mathcal{A}}{4}\left(3e^{-\frac{dx^2}{2\sigma^2}}(\sum\bar{k}_i)^2 - \tilde{k}^2 + 3g\left(\frac{dx^2}{4\sigma^2}\right)\bar{k}^2 \right) \\
-    \tilde{\pi}_{ij}^{(V)} &= \mathcal{A}\left(\frac{\sigma}{dx}\right)^2\frac{1}{2}\left[\hat{k}_i\hat{k}_j\sum_a\hat{k}_a2\sin\left(\frac{k_adx}{2}\right)\Sigma_a - \frac{1}{2}\left(\hat{k}_i2\sin\left(\frac{k_jdx}{2}\right)\Sigma_j + \hat{k}_j2\sin\left(\frac{k_idx}{2}\right)\Sigma_i\right) \right]\\
-    \tilde{\pi}_{ij}^{(T)} &= \, .
-  \end{align}
-\end{subequations}
 
 At this point, it is extremely unclear that a consistent set of projection operators associated with the given discrete definition of $\pi_{ij}$ can even be found.
 This is not surprising, given that the trace of the operator as defined is inconsistent with a Laplacian stencil living on the lattice.
@@ -798,13 +854,35 @@ In the following subsection we will consider also the case where a low-order dis
 
 \subsection{Numerical Signal: Discrete $h_{ij}$ Laplacian}
 \jb{The Gaussian prefactor also acquires angular dependence in this case.  Do both the self-consistent with factored $T_{ij}$ definition, and low-order nearest neighbour.}
+We now consider instead the case where $h_{ij}$ is evolved with a finite-differencing approximation to the Laplacian.
+As shown above, in the leading asymptotic expansion, we must now evaluate $\tijNoT$ at scale factor $a_k = \keffH(\kvec)/2\omega$, which introduces additional angular dependence into the integrand over directions in Fourier space.
+
+\subsection{Numerical Signal: Binning Effects}
+\jb{Work out how binning modifies the computed result.}
+In the above, we obtained estimates for $\Omega_{\rm GW}$ by performing the angular integrals either analytically or using a quadrature integrator (so that numerical errors are present only at the level of machine precision).
+However, a lattice simulation on a fixed rectangular grid instead samples the wavenumbers as discrete values
+\begin{equation}
+  k_{\vec{i}} = \frac{2\pi}{L}\left(i_x,i_y,i_z\right)
+\end{equation}
+leading to a discretization of the angular integrals.
+Furthermore, these wavenumbers are typically binned, inducing a nontrivial implicit window function of the estimated spectrum.
+As a final step, we thus investigate how these choices of binning scheme modify the results from exact angular integrations.
+\jb{Due to various discrete symmetries of the $k$ grid that are probably shared by the effective wavenumbers, a lot of possible errors might exactly cancel here, but this is a detail to check.  Also, for asphericity that is \emph{not} aligned with the coordinate axes, this is no longer ture.}
+
+\subsubsection{Naive Binning}
+Explain what happens if we just bin things (which introduces extra noise).
+
+\subsubsection{Window Function Binning}
+A more sophisticated approach is to view the numerically computed spectrum as a windowed version of some underlying spectrum with output values specified at some selected points $k_{\rm output}$, and determined by samples at some other collection of input values $k_{\rm input}$.
+Heuristically, this allows us to assign part of the signal from a given $k_{\vec{i}}$ on the lattice simulation grid to multiple output wavenumbers in our numerical spectrum with appropriately defined weights.
+\jb{Put in the equation for arbitrary window, then give an easy example.}
 
 
 \section{Asymmetric Gaussian}
-We now consider a case where the underlying field configuration produces a real gravitational wave signa.
+We now consider a case where the underlying field configuration produces a real gravitational wave signal.
 For this, we must complexify our model slightly, which for simplicity we do by allowing the Gaussian to be ellipsoidal with 3 different $\sigma_i$'s.
 In the continuum, the result is independent of the embedding of principal axes of the ellipse with respect to the coordinate axes.
-However, since a discrete grid explicitly breaks the rotational isotropy, this is no longer true in the case of finite difference approximations.
+However, since a discrete grid explicitly breaks continuous rotational symmetry leaving behind only a discrete subset, this is no longer true in the case of finite difference approximations.
 To simplify the algebra, we restrict to the case where the principal axes of the ellipse lie along the coordinate axes.
 The more general case allows rotation off of this configuration, which allows us to explore the influence of the anisotropy of the finite difference stencil.
 
@@ -881,14 +959,6 @@ From which we can easily compute the SVT decomposition
 \end{equation}
 \jb{Define $\kzero$ with dimensions here}
 \jb{New twist, the equivalent of $f$ here induces a numerical correction (as well as giving the physical part at leading order.  Will have to see how it projects, since both physical and numerical piece vanish for symmetric profile.  Need to see how they grow as asymmetry is introduced, and presumably when the numerical piece takes over.  This piece will survive even correct projector.}
-
-\begin{subequations}
-\begin{align}
-  \tilde{\pi}_{ii} &= \\
-  \hat{k}_l\tilde{\pi}_{li} &= \\
-  \hat{k}_l\tilde{\pi}_{lm}\hat{k}_m &= 
-\end{align}
-\end{subequations}
 
 \jb{Finish this to determine when the real signal and the numerical signal are equal to each other (for the case of principal axes aligned with the lattice first).}
 \jb{Here we can make a concrete connection for how the scalar dynamics and tensor dynamics interact.  Suppose that the numerical $\phi$ evolution induces an asymmetric Gaussian profile out of a spherically symmetric one.  Computing the cross-term between the ``real'' numerical profile and the ``numerical'' noise term in this section will show if the projection can be used to partially under the numerical error in the $\phi$ profile.  This is by no means a general argument, but it's at least something marginally nontrivial.}
