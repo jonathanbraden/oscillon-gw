@@ -28,14 +28,16 @@ Combining, we obtain
 \begin{align}
   \proj^{(T)}_{ij,lm}\delta_{lm} &= 0 \\
   \proj^{(T)}_{ij,lm}\kzero_l\kzero_m &=  \\
-  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m\delta_{lm} &= \, .
+  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m\delta_{lm} &= \\
+  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m\kzero_i\kzero_m &= \frac{1}{2}\left(\kzero^2-\kone^2\right) \\
+  \proj^{(T)}_{ij,lm}\kzero_l\kzero_m\delta_{ij} &= \, .
 \end{align}
 \end{subequations}
 
 \subsection{Discrete Factorized Projectors}
 Here, let's instead use
 \begin{equation}
-  Q_{ij} \equiv \delta_{ij} - \frac{\kzero_i\kzero_j}{\kzero^2}
+  Q_{ij} \equiv \delta_{ij} - \frac{\kzero_i\kzero_j}{\kzero^2} \equiv \delta_{ij} - \hat{\kzero}_i\hat{\kzero}_j
 \end{equation}
 to contstruct our TT projection operator
 \begin{equation}
@@ -47,7 +49,8 @@ We then have
   \proj^Q_{ij,lm}\delta_{lm} &= 0 \\
   \proj^Q_{ij,lm}\kzero_l\kzero_m &= 0 \\
   \proj^Q_{ij,lm}\kzero_l\kzero_m\delta_{lm} &= \\
-  \proj^Q_{ij,lm}C_l\kzero_l\kzero_m &= 
+  \proj^Q_{ij,lm}C_l\kzero_l\kzero_m &= \\
+  \proj^Q_{ij,lm}\kzero_l\kzero_m\kzero_i\kzero_j &= 
 \end{align}
 \end{subequations}
 
@@ -105,11 +108,13 @@ To understand the effects of the discrete cutoff, it is convenient to expand the
 \begin{align}
   \kzero_i    &\approx k_i\left(1 - \alpha^2\frac{1}{6}\hat{k}_i^2 + \frac{1}{5!}\alpha^4 \hat{k}_i^4 \right)  \\
   \kzero_i^2  &\approx k_i^2\left(1 -\frac{\alpha^2}{3}\hat{k}_i^2 + \frac{2}{45}\alpha^4\hat{k}_i^4 \right)  \\
+  \kzero_i^4  &\approx k_i^4\left(1 - \frac{2}{3}\alpha^2\hat{k}_i^2 + \frac{1}{5}\alpha^4\hat{k}_i^4\right) \\
   \kzero^2    &\approx k^2\left(\sum\hat{k}_i^2 - \frac{\alpha^2}{3}\sum\hat{k}_i^4 + \frac{2\alpha^4}{45}\sum\hat{k}_i^6 \right) \\
   \kzero^4    &\approx k^4\left(1-\frac{2\alpha^2}{3}\sum\hat{k}_i^4 + \frac{4\alpha^4}{45}\sum\hat{k}_i^6 + \frac{\alpha^4}{9}(\sum\hat{k}_i^4)^2\right) \\
+  \sum\kzero_i^4 &\approx k^4\left(\sum\hat{k}_i^4 - \frac{2}{3}\alpha^2\sum\hat{k}_i^6 + \frac{1}{5}\alpha^4\sum\hat{k}_i^8\right) \\
   \kone       &\approx k\left(1 - \frac{\alpha^2}{6}\sum\hat{k}_i^4 + \frac{\alpha^4}{5!}\sum\hat{k}_i^6 \right)   \\
   \kone^2     &\approx k^2\left(1 - \frac{\alpha^2}{3}\sum\hat{k}_i^4 + \alpha^4\left[\frac{2}{5!}\sum\hat{k}_i^6 + \frac{1}{36}(\sum\hat{k}_i^4)^2\right]\right)  \\
-  \ktwo_i     &\approx k\left(\right)   \\
+  \ktwo_i     &\approx k\left(\hat{k}_i^2 - \frac{1}{6}\alpha^2\hat{k}_i^4 + \frac{1}{5!}\alpha^4\hat{k}_i^6\right)   \\
   \ktwo_i^2   &= \hat{k}_i^2\kzero_i^2 \approx k^2\hat{k}_i^4\left(1-\frac{\kfrac^2}{3}\hat{k}_i^2 + \frac{2\alpha^4}{45}\hat{k}_i^4\right)  \\
   \ktwo^2     &\approx k^2\left(\sum_i\hat{k}_i^4 - \frac{\kfrac^2}{3}\sum\hat{k}_i^6 + \frac{2}{45}\kfrac^4\sum\hat{k}_i^8 \right)
 \end{align}
