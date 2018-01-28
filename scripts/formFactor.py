@@ -156,6 +156,59 @@ def plot_uniform_random(nx,nl,ns=1000):
         ax.plot(k[1:],f[1:]/nx)
     return fig,ax
 
+def formFactorSamples_uniform(nOsc,nl,ns):
+    """
+    Produce samples of form factors for oscillons randomly distributed in a given volume
+
+    Input:
+       nOsc - Number of oscillons
+       nl   - Number of lattice sites per dimension
+       ns   - Number of oscillon distributions to sample
+
+    Output:
+       f    - ns X nb array of samples (with nb number of k-bin samples)
+       w    - weights to normalize f by
+       k    - k-values (in units of fundamental grid spacing)
+    """
+    for i in range(ns):
+        a,w,k = F3_sample(np.random.uniform(size=(nOsc,3)),nl,1)
+    nb = k.size
+        
+    f = np.empty((ns,nb))
+    f[0,:] = a
+    for i in range(1,ns):
+        a,w,k = F3_sample(np.random.uniform(size=(nOsc,3)),nl,1)
+        f[i,:] = a
+    return f,w,k
+
+def uniform_random(nOsc):
+    return np.random.uniform(size=(nOsc,3))
+
+def uniform_pert(nOsc):
+    x1 = np.linspace(0.,1.,nOsc,endpoint=False)
+    xm = np.array(list(product(x1,x1,x1)))
+    dx = np.random.uniform(size=(xm.shape[0],3))  # fix to be the right size 
+    return xm + dx
+
+def random_cluster(nCluster,cSize,dr,nd=3):
+    """
+    Randomly sample clusters of given numbers of oscillons uniformly distributed in volume.
+    Currenlty, the cluster centers are drawn randomly from the volume, then cSize positions are randomly drawn from a cube of side length dr around these centers
+
+    Input:
+       nCluster - Number of clusters
+       cSize    - Number of oscillons per cluster
+       dr       - Fractional size of a cluster (in units of side length
+
+    Output:
+
+
+    To Do : Sample in some sphere not a cube, add Gaussian correlations, etc.  Allow for randomly number of oscillons per cluster
+    """
+    xm = np.random.uniform(size=(nCluster,nd))
+    x2 = np.random.uniform(low=-0.5*dr,high=0.5*dr,size=(nCluster,cSize,nd))
+    return np.reshape(xm[:nCluster,np.newaxis,:nd]+x2,(-1,nd))
+
 def main():
     return
     
