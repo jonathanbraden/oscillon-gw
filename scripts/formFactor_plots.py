@@ -14,7 +14,7 @@ def plot_two_oscillon_convergence_len(dr):
     """
     fig,ax = plt.subplots()
     nBase = 16
-    for i in range(3):
+    for i in range(5):
         xv = np.array([[0.,0.,0.],[dr/2**i,0.,0.]])
         fs,ws,ks = F3_sample(xv,nBase*2**i,1)
         ax.plot(ks/2.**i,fs/ws,label=r'$%i$' % (2**i))
@@ -88,6 +88,9 @@ def plot_uniform_x_3d(nx,nl,kv=None,fig=None,ax=None,testInt=None):
     if testInt is not None:
         f,k,a = F3_integrals(xv,nl,0.1,ns=testInt)
         ax.plot(k[1:],f[1:]/nx**3,'r--')
+
+    ax.set_ylabel(r'$F_N / N_{\rm osc}$')
+    ax.set_xlabel(r'$kL / 2\pi$')
     return fig,ax
 
 def plot_uniform_random_3d(nOsc,nl,fig=None,ax=None,testInt=None):
@@ -132,16 +135,19 @@ def plot_form_factor_contours(fName):
     ns = ff.shape[0]
     
     fig,ax = plt.subplots()
-    # Plot 99%, 95% and 60% contours
-    cuts = np.array(np.array([0.01,0.05,0.4,0.5])*ns,dtype=int)
+    cuts = np.array(np.array([0.005,0.025,0.2])*(ns+1),dtype=int)  # Check the indices for off by ones
     for i in cuts:
-        plt.plot(k,ff[i]/w)
-        plt.plot(k,ff[-i]/w)
-    plt.plot(k,np.mean(ff,axis=0)/w)
+        ax.fill_between(k,ff[i]/w,ff[-i]/w,alpha=0.2)
+    ax.plot(k,ff[(ns+1)/2]/w,'b')
+    ax.plot(k,np.mean(ff,axis=0)/w,'m')
+    ax.axvline(x=32,color='r')
 
     # Add a few randomly sampled trajectories (This only works if I haven't already sorted the trajectories ...
     for i in np.random.random_integers(ff.shape[0],size=5):
         plt.plot(k,data['form'][i]/w,'k--',alpha=0.5)
+
+    ax.set_xlabel(r'$kL / 2\pi$'); ax.set_ylabel(r'$F_{\rm N}$')
+    ax.set_xlim(0.,np.max(k))
     return fig,ax
     
 def main():

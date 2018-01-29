@@ -29,7 +29,7 @@ def F1_sample(x,L,n):
 
 F3_exact = lambda dr, k : 2.*(1.+np.sin(k*dr)/(k*dr))
 
-def F3_integrals(x,n,dn,ns=101):
+def F3_integrals(x,n,dn,ns=128):
     """
     Return the form factor by performing the angular integrals numerically instead of
     sampling off a lattice.
@@ -60,6 +60,30 @@ def F3_integrals(x,n,dn,ns=101):
         ii = i*dn
         form[i] = np.sum(st*np.abs(np.sum(np.exp(1j*2.*np.pi*ii*(k_x[...,np.newaxis]*x[:,0]+k_y[...,np.newaxis]*x[:,1]+k_z[...,np.newaxis]*x[:,2])),axis=-1))**2 )
     return norm*form, dn*np.arange(nb), area
+
+def F3_integrals_adapt(x,n,dn,ns=16):
+    """
+    Compute the angular integrals using an adaptive number of points depending on the radius in k.  This speeds up the computation since the key is to resolve wavelengths, which requires a variable number of points as a function of radius.  As implemented, this at least converges without having to tweak inputs, but isn't necessarily blazing fast.
+
+    Input:
+      ns  - Number of samples per wavelength
+    """
+    # To Do: Estimate scale from the positions
+
+    nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*nn)
+    nb = np.int(np.ceil(nmax/dn)) 
+    form = np.empty(nb)
+
+    # Test for speed, just compute the arrays for maximal size, and do slicings in the loop
+    
+    for i in range(nb):
+        ii = i*dn
+        sz = np.max([32,ns*np.int(np.ceil(ii))])
+        tv,pv = np.meshgrid(np.linspace(0.,np.pi,sz,endpoint=False),np.linspace(0.,2.*np.pi,sz,endpoint=False))  # Can probably adapt this to theta to improve speed as well
+        norm = (tv[0,1]-tv[0,0])*(pv[1,0]-pv[0,0]) / (4.*np.pi)
+        k_x = np.cos(tv); k_y = np.sin(tv)*np.cos(pv); k_z = np.sin(tv)*np.sin(pv); st = np.sin(tv)
+        form[i] = norm*np.sum(st*np.abs(np.sum(np.exp(1j*2.*np.pi*ii*(k_x[...,np.newaxis]*x[:,0]+k_y[...,np.newaxis]*x[:,1]+k_z[...,np.newaxis]*x[:,2])),axis=-1))**2 )
+    return form, dn*np.arange(nb)
 
 def F3_sample(x,n,dn):
     """
