@@ -3,6 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
 
+def _nyq1D(n):
+    return n//2
+
+def _nyq3D(n):
+    return
+
 def F1(x,kv):
     """
     Return 1D form factor (continuum version) for oscillons at positions x_i
@@ -85,6 +91,29 @@ def F3_integrals_adapt(x,n,dn,ns=16):
         form[i] = norm*np.sum(st*np.abs(np.sum(np.exp(1j*2.*np.pi*ii*(k_x[...,np.newaxis]*x[:,0]+k_y[...,np.newaxis]*x[:,1]+k_z[...,np.newaxis]*x[:,2])),axis=-1))**2 )
     return form, dn*np.arange(nb)
 
+def F3_sample_reduced(x,n,dn):
+    """
+    Return form factor sampled on lattice using a binning approach and only summing over the positive k-values.
+
+    Input:
+      x  - Positions of oscillons
+      n  - Number of lattice sites (assumed same in all directions)
+      dn - Bin width to use
+
+    TO DO: Add windowing with various windows.  Adjust bin sizes
+    TO DO: Fix treatment of the zero modes?
+    """
+    nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*nn)
+    nb = np.int(np.ceil(nmax/dn)) 
+    form = np.zeros(nb); w = np.zeros(nb)
+    
+    # I have to kill the zero mode in here (doing the array conversion is a terrible idea in python, it's horrifically slow)
+    for nx,ny,nz in product(nv,nv,nv):  # Oops, this is wrong, but maybe it doesn't matter?
+        i = np.floor(np.sqrt(nx**2+ny**2+nz**2)/dn); i = np.int(i)
+        form[i] += np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2 # Think about this
+        w[i] += 1.
+    return form, w, dn*np.arange(nb)
+
 def F3_sample(x,n,dn):
     """
     Return form factor sampled on lattice using a binning approach
@@ -95,17 +124,90 @@ def F3_sample(x,n,dn):
       dn - Bin width to use
 
     TO DO: Add windowing with various windows.  Adjust bin sizes
+    TO DO: Fix this to work properly for odd grids by weighting bins with Nyquist values properly
     """
-    nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*nn)
+    nn = n//2+1; nv = np.arange(nn); npos = np.arange(1,nn); nmax = np.int(np.sqrt(3.)*(n//2))+2
     nb = np.int(np.ceil(nmax/dn)) 
     form = np.zeros(nb); w = np.zeros(nb)
-    
-    # I have to kill the zero mode in here (doing the array conversion is a terrible idea in python, it's horrifically slow)
+
+    # Fix Nyquist counting for odd grids
     for nx,ny,nz in product(nv,nv,nv):
-        i = np.floor(np.sqrt(nx**2+ny**2+nz**2)/dn); i = np.int(i)
-        form[i] += np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2 # Think about this
-        w[i] += 1.
-    return form, w, dn*np.arange(nb)
+        i = np.int( np.floor(np.sqrt(nx**2+ny**2+nz**2)/dn) )
+        nzeros = 3 - np.nonzero([nx,ny,nz])[0].size
+        nnyq = 3 - np.nonzero([nn-1-nx,nn-1-ny,nn-1-nz])[0].size
+        norm = 1./2.**(nzeros+nnyq)  
+        dform  = ( np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                   )
+        # Weight modes properly accounting for zeros so that negative isn't part of grid
+        form[i] += norm*dform
+        w[i] += norm*8.  
+    return form, w, dn*np.arange(nb)    
+
+def F3_center_bin(x,n,dn):
+    """
+    Return form factor sampled on lattice using a binning approach with centered bins
+
+    Input:
+      x  - Positions of oscillons
+      n  - Number of lattice sites (assumed same in all directions)
+      dn - Bin width to use
+
+    TO DO: Add windowing with various windows.  Adjust bin sizes
+    TO DO: Fix this to work properly for odd grids by weighting bins with Nyquist values properly
+    """
+    nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*(n//2))+2
+    nb = np.int(np.ceil(nmax/dn)) 
+    form = np.zeros(nb); w = np.zeros(nb)
+
+    # Fix Nyquist counting for odd grids
+    for nx,ny,nz in product(nv,nv,nv):
+        i = np.int( np.floor(np.sqrt(nx**2+ny**2+nz**2)/dn + 0.5) )  # Fix this, not correct for arbitrary dn 
+        nzeros = 3 - np.nonzero([nx,ny,nz])[0].size
+        nnyq = 3 - np.nonzero([nn-1-nx,nn-1-ny,nn-1-nz])[0].size
+        norm = 1./2.**(nzeros+nnyq)  
+        dform  = ( np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                   )
+        form[i] += norm*dform
+        w[i] += norm*8.  
+    return form, w, dn*np.arange(nb)    
+
+def F3_window_reduced(x,n,dn):
+    """
+    Return form factor sampled on lattice using a Welch window
+
+    Input:
+      x  - Positions of oscillons
+      n  - Number of lattice sites (assumed same in all directions)
+      dn - bin width (not yet implemented)
+    """
+
+    # This is all broken for dn != 1.  Have to compute max differently then
+    nn = n//2+1; nv = np.arange(nn)
+    nmax = np.floor(np.sqrt(3.)*(n//2)/(1.*dn))+1+1 # 1 for 0-mode, 1 to get next k above max
+    nb = np.int(nmax)
+    form = np.zeros(nb); w = np.zeros(nb)
+    wtmp = np.empty(2)
+    
+    for nx,ny,nz in product(nv,nv,nv):
+        r = np.sqrt(nx**2+ny**2+nz**2)/dn; i = np.int(np.floor(r))
+        wtmp[0] = (1.-(i-r)**2)**2; wtmp[1] = (1.-(i+1-r)**2)**2 
+        form[i:i+2] += wtmp * np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+        w[i:i+2] += wtmp
+    return form,w,dn*np.arange(nb)
 
 def F3_window(x,n,dn):
     """
@@ -116,18 +218,64 @@ def F3_window(x,n,dn):
       n  - Number of lattice sites (assumed same in all directions)
       dn - bin width (not yet implemented)
     """
-    nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*nn)
-    nb = np.int(np.ceil(nmax/dn))
+
+    # This is all broken for dn != 1.  Have to compute max differently then
+    nn = n//2+1; nv = np.arange(nn)
+    nmax = np.floor(np.sqrt(3.)*(n//2)/(1.*dn))+1+1 # 1 for 0-mode, 1 to get next k above max
+    nb = np.int(nmax)
     form = np.zeros(nb); w = np.zeros(nb)
     wtmp = np.empty(2)
-    
+
+    # Fix Nyquist counting for odd grids
     for nx,ny,nz in product(nv,nv,nv):
         r = np.sqrt(nx**2+ny**2+nz**2)/dn; i = np.int(np.floor(r))
-        wtmp[0] = (1.-(r-i)**2)**2; wtmp[1] = (1.-(r+1-i)**2)**2 
-        form[i:i+2] += wtmp * np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
-        w[i:i+2] += wtmp
+        i = np.int( np.floor(np.sqrt(nx**2+ny**2+nz**2)/dn) )
+        nzeros = 3 - np.nonzero([nx,ny,nz])[0].size
+        nnyq = 3 - np.nonzero([nn-1-nx,nn-1-ny,nn-1-nz])[0].size
+        norm = 1./2.**(nzeros+nnyq)
+        wtmp[0] = (1.-(i-r)**2)**2; wtmp[1] = (1.-(i+1-r)**2)**2 
+
+        dform  = ( np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                   )
+        # Weight modes properly accounting for zeros so that negative isn't part of grid
+        form[i:i+2] += norm*dform * wtmp
+        w[i:i+2] += norm*8. * wtmp
     return form,w,dn*np.arange(nb)
-        
+
+def F3_dens(n,dn):
+    nn = n//2+1; nn0 = n//2; nv = np.arange(nn); nf = np.arange(n); nmax = np.int(np.sqrt(3.)*(n//2))+2
+    nb = np.int(np.ceil(nmax/dn))
+
+    w = np.zeros((nb,2)); wtmp = np.empty(2)
+    for nz in nf:
+        nnz = nz
+        if (nz > nn0):
+            nnz = n-nz
+        for ny in nf:
+            nny = ny
+            if (ny > nn0):
+                nny = n-ny
+            for nx in nf:
+                nnx = nx
+                if (nx > nn0):
+                    nnx = n-nx
+                r = np.sqrt(nnx**2+nny**2+nnz**2); i = np.int(np.floor(r))
+                wtmp[0] = (1.-(r-i)**2)**2; wtmp[1] = (1.-(r+1-i)**2)**2
+                w[i,0] += 1.
+                w[i:i+2,1] += wtmp
+    return w, dn*np.arange(nb)
+    
+def _get_nb(n):
+    nn = n//2+1
+    nmax = np.floor(np.sqrt(3.)*(n//2)/(1.*dn))+1+1
+    
 def plot_uniform_x(nx,nl,kv=None):
     """
     Plot form factors in 1D sampled at lattice momenta for oscillons uniformly separated from each other (and thus highly correlated).  Plots the form factors up to the specified maximum number of oscillons, normalized to n_osc
