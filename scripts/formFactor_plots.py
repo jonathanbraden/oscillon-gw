@@ -1,6 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import palettable as pal
 from formFactor import *
+
+cCyc = pal.colorbrewer.sequential
+
+def _add_Nyq_band(ax,nl):
+    nn = nl/2; nn3 = np.int(3.**0.5*nn)+1
+    ax.axvspan()
+    return
 
 def plot_two_oscillon_convergence_len(dr):
     """
@@ -12,19 +20,27 @@ def plot_two_oscillon_convergence_len(dr):
     
     TO DO: Add vertical line for Nyquist
     """
+    cc = pal.colorbrewer.sequential.Blues_9
+    
     fig,ax = plt.subplots()
-    nBase = 16
-    for i in range(5):
+    nBase = 16; nMax = 5
+    nn = nBase/2; nn3 = np.int(np.floor(3.**0.5*nn))+1
+
+    cv = cc.mpl_colors[-nMax:]
+    for i in range(nMax):
         xv = np.array([[0.,0.,0.],[dr/2**i,0.,0.]])
         fs,ws,ks = F3_sample(xv,nBase*2**i,1)
-        ax.plot(ks/2.**i,fs/ws,label=r'$%i$' % (2**i))
-    kk = np.linspace(0.,nBase,500)
-    ax.plot(kk,F3_exact(dr,2.*np.pi*kk),label=r'$\infty$')
+        ax.plot(ks/2.**i,fs/ws,label=r'$%i$' % (2**i),color=cv[i])
+    kk = np.linspace(0.,nn3,500)
+    ax.plot(kk,F3_exact(dr,2.*np.pi*kk),'r--',label=r'$\infty$')
+
+    ax.axvspan(nn,nn3,alpha=0.2,color='grey')
+    
     ax.set_xlabel(r'$L_{%i}k / 2\pi$' % nBase); ax.set_ylabel(r'$F_2$')
 
-    ax.set_ylim(1.,5.)
+    ax.set_ylim(1.,5.); ax.set_xlim(0,nn3)
     plt.legend(loc='upper center',bbox_transform=fig.transFigure,bbox_to_anchor=(0,0,1,1),ncol=2,title=r'$L / L_{\rm %i}$' % nBase)  # fix this
-    ax.text(0.5,0.05,r'$L^{-1}_{\rm %i}\Delta r$' % nBase,horizontalalignment='center',verticalalignment='bottom',transform=ax.transAxes)
+    ax.text(0.5,0.05,r'$L^{-1}_{\rm %i}\Delta r = %g$' % (nBase,dr),horizontalalignment='center',verticalalignment='bottom',transform=ax.transAxes)
 
     # Add ticker fix in here
     return fig,ax

@@ -68,7 +68,7 @@ def paper_plots_tmp():
     ax.plot(eta(tv,H0,w),np.cos(k*eta(tv,H0,0.))*np.cos(tv)**2,'r',label=r'Full',alpha=0.3)
 
     ax.set_xlabel(r'$\omega(\eta - \eta_0)$')
-    ax.set_ylabel(r'Integrand')
+    ax.set_ylabel(r'$\mathcal{C}_k,\mathcal{S}_k,S_k$')
     return fig,ax
 
 full_c = lambda y,t,k,H0,w : np.cos(t)**2*np.cos(k*eta(t,H0,w)) #/ a(t,H0,w)
@@ -114,7 +114,7 @@ def integral_plots_tmp(tv = np.linspace(0.,50.*np.pi,1500),k=5.,H0=0.1,w=0.):
     ax.plot(tau,sol_f_c**2+sol_f_s**2,alpha=0.3,color=col_sum)
     ax.plot(tau,amp_k(k,H0,w)**2*step,'--',color=col_sum)
 
-    ax.set_xlabel(r'$\tau$')
+    ax.set_xlabel(r'$\tau$'); ax.set_ylabel(r'$$')
     
     return fig,ax
     
