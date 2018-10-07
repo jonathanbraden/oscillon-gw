@@ -28,6 +28,9 @@ In this paper, we will not worry about how the dynamics of the fields themselves
 \jb{Disrete $\phi$ evolution will cause $\omega$ to be time-dependent as well.  This makes estimating the effects of the discrete grid difficult since we produce wavenumbers $k \sim \omega a$, and corrections look like $\omega / k_{\rm nyq}$ to various powers, which can scale purely through the modified dispersion of the discrete $\phi$ stencil.}
 
 \jb{Add note that scaling with number of oscillons depends on whether or not they dominate energy density.  If they do, the $N_{\rm osc}$ enhancement cancels with critical density, otherwise there is a suppression factor for density in oscillons to overall energy density.}
+
+\jb{Somewhere mention that we include modes beyond Nyquist just to show what the effects there can be, not because they are meaningful.}
+
 \section{Pointless Notes}
 Think a bit about what time integration errors do (for long time runs lots of time-stepping algorithms will will constantly violate things like energy conservation, which will modify the amplitude of $h_{ij}$ and in long time runs this can accumulate.
 
@@ -257,11 +260,11 @@ Similarly, the extension to time varying frequencies $\omega(t)$ is obvious but 
 The trigonometric functions can be reexpressed as
 \begin{subequations}
 \begin{align}
-  \cos k\tau\cos^2\omega t &= \frac{1}{4}\cos(k\tau-2\omega) + \frac{1}{4}\cos(2\omega t+k\tau) + \frac{1}{2}\cos k\tau \\
-  \sin k\tau\cos^2\omega t &= \frac{1}{4}\sin(k\tau-2\omega) + \frac{1}{4}\sin(2\omega t+k\tau) + \frac{1}{2}\sin k\tau \, .
+  \cos k\tau\cos^2\omega t &= \frac{1}{4}\cos(k\tau-2\omega t) + \frac{1}{4}\cos(2\omega t+k\tau) + \frac{1}{2}\cos k\tau \\
+  \sin k\tau\cos^2\omega t &= \frac{1}{4}\sin(k\tau-2\omega t) + \frac{1}{4}\sin(2\omega t+k\tau) + \frac{1}{2}\sin k\tau \, .
 \end{align}
 \end{subequations}
-The dominant contributions to the integrals come from the sinusoids of $2\omega t - k\tau$, which have stationary points in their evolution when
+The dominant contributions to the integrals come from the sinusoids of $k\tau - 2\omega t$, which have stationary points in their evolution when
 \begin{equation}
   k = 2\omega\frac{dt}{d\tau} = 2\omega a \, .
 \end{equation}
@@ -294,11 +297,19 @@ Here the subscript ${}_k$ indicates that the given quantity is evaluated at the 
 \end{equation}
 Squaring and summing, we find
 \begin{equation}
+  \label{eqn:amplitude-stat-phase-general}
   S_k \approx \frac{\pi}{16\omega}k^3\int \frac{d\Omega_k}{(2\pi)^2} H_k^{-1}\sum_{ij}\left|\mathcal{T}_{ij}({\bf k},\tau_k)\right|^2\Theta(2\omega a - k) \, .
 \end{equation}
 where we have allowed an angular dependence in $H_k^{-1}$ for reasons that will be clear below.
 We immediately note there is a sharp cutoff in the spectrum at $k = 2\omega a$.
 Moving beyond the approximation used here, the stationary phase contribution will have a short period of time during which it turns on (of width $\sqrt{2\omega a'} = \sqrt{2\omega a^2 H}$), which smooths the step function slightly, but still leaves a rapidly decreasing function beyond the cutoff.
+
+The result~\eqref{eqn:amplitude-stat-phase-general} is a central result of our analytic analysis, and can be widely applied to \emph{any} long-lived field profile oscillating at a single characteristic frequency $\omega$.
+To make further progress, additional information about the spatial field profile (encoded in $\tijNoT$) is needed.
+In many cases, the profile will have exhibit scaling properties, leading to a scaling of the stress-energy tensor itself.
+Additional progress can be made in this case without an explicit form for $\tijNoT$ which we will now explore.
+
+\subsection{Multifrequency Sources}
 
 \subsection{Scaling Profile Solutions}
 We now consider the morphology of $\Omega_{\rm GW}$ for some special cases of cosmological evolution and the source term $\tij$.
@@ -346,6 +357,7 @@ In the above, we have defined
   \frac{1}{(2\pi)^3}\int d\Omega \sum_{i,j}\left|\tilde{\tijNoT}\left((2\omega)^\beta \kvec^{\beta-1},t=0\right)\right|^2 = \phi_0^4\sigma^2 \tilde{F}_0(\kvec,\omega) \, ,
 \end{equation}
 with $\phi_0$ a parameter characterizing the amplitude of the field oscillations and $\sigma$ a characteristic length scale.
+For objects of fixed physical size ($\beta=1$), $\tilde{F}_0$ is independent of $\kvec$.
 One particular case of interest is an oscillon, where $\phi_0$ is the amplitude of the oscillations at the center of the oscillon, and $\sigma$ is the width of the oscillon profile.\footnote{Here we are assuming an oscillon profile characterized by a single with $\sigma$.}
 With the case of a collection of oscillons in mind, we notice that for field profile of fixed physical size ($\beta=1$) and matter dominated expansion ($w=0$), a spectral slope greater that $\frac{5}{2}$ requires the presence of a \emph{growing} source (i.e.\ $\alpha < 0$).
 Furthermore, in order for the amplitude at the cutoff ($k=2\omega a$) to increase with time, we must have
@@ -360,6 +372,8 @@ Furthermore, in order for the amplitude at the cutoff ($k=2\omega a$) to increas
 \jb{Generalize this to time-dependent $\omega$ since the derivation is essentially unchanged.}
 \jb{Generalize the scaling to two arbitrary functions instead of $\alpha$ and $\beta$ for the since frequency case.}
 \jb{Do a quick redo of the ``semi-analytic'' calculations from the Antusch paper to see if there is any oscillation in the amplitude as the output scale factor is adjusted, or if these oscillations in the amplitude on top of the stationary phase approximation average out when doing the angular integrals.  The only angular dependence that has to be pulled inside the integrals is the part appearing in the Gaussian.}
+
+\jb{State that this may be very difficult to disentangle from a bunch of unresolved astrophysical sources in a real detector, so pushing the signal amplitude above the sensitivity of a GW observatory isn't the key.  The multi-peaked, or single peaked signal morphology is different and it seems more plausible that it can be separated, but those signals don't arise from long-lived sources (and therefore don't arise just by ``running our unresolved simulations that we clearly don't understand'' longer.)}
 
 \subsection{GWs from a collection of localized sources}
 The above result holds for an arbitrary scalar field profle $\prof({\bf x},t)$ that oscillates with a single characteristic frequency $\omega$.
@@ -400,7 +414,7 @@ For simplicity, we now further assume that the positions $\xvec_n$ are time-inde
 A simple model for the gravitational waves produced by the relative motion of the sources can be obtained by allowing $x_n = x_n(t)$.
 With these assumptions, the factor $\sum e^{i\kvec\cdot\xvec_n}$ comes outside the temporal integrals, and there is an overall form-factor multiplier
 \begin{equation}
-  F(\kvec) \equiv \left|\sum_{n=1}^N e^{i\kvec\cdot\xvec}\right|^2 \, .
+  F_N(\kvec) \equiv \left|\sum_{n=1}^N e^{i\kvec\cdot\xvec}\right|^2 \, .
 \end{equation}
 For example, in the case of two objects with separation $\Delta\xvec = \xvec_2-\xvec_1$, we have
 \begin{equation}
@@ -422,15 +436,18 @@ This indicates that some care must be taken when interpreting the GW signal usin
 \jb{Having said this, it just induces small oscillations around $2$ with period not much different than the separation in k-vectors, so it's not like the overall shape of the signal is affected much.  However, for only a few oscillons per Hubble, shot noise like effects might matter.}
 \jb{How does the box periodicity show up when we angle average this on a rectangular lattice?  Does it come from the discrete sampling in the angles somehow, since $\Delta x \to L - \Delta x$ doesn't evaluate to the same values anymore.  Go through this carefully to check, and understand what's breaking it.}
 
-More generally, for $N$ objects we define the $N$ separations $\Delta\xvec_i \equiv \xvec_i-\xvec_1$ to obtain
-\begin{equation}
-  F_N(\kvec) = 
-\end{equation}
-In the special case that the individual locations $x_n$ are drawn uniformly in the interval $[0,L]$ and $k = 2\pi i / L$, then each individual phase factor is a Gaussian Random Deviate with unit variance \jb{or is it 2 (Check)?}.
+\begin{figure}
+  \includegraphics[width=3.375in]{{{form-factor-converge-len-2osc-floor}}}
+  \includegraphics[width=3.375in]{{{form-factor-converge-len-2osc-center}}}
+  \includegraphics[width=3.375in]{{{form-factor-converge-len-2osc-welch}}}
+  \caption{An illustration of how $F_2$ approaches the infinite volume limit when sampling in a finite box.  We plot the ``angle averaged'' $F_2$ estimated on a lattice by sampling at the discrete lattice wavenumbers and averaging within equally spaced bins in absolute wavenumber.  To show convergence to the infinite volume limit, we take take the two oscillon positions to be separated by $L_{\rm 16}\Delta r = $\jb{??} along the $x$-axis.  We then vary the overall lattice size by repeatedly doubling the number of lattice sites per linear dimension as well as the overall side length, so that $dx$ and $\Delta r$ are both held fixed.  The red line is the continuum limit~\eqref{eqn:} obtained by analytically computing the angular integrals for the two object system.  The vertical grey band indicates modes on the 3D lattice beyond the 1D Nyquist wavenumber.  In order to illustrate the effects of various binning schemes we show the result by binning by the floor of the wavenumber (\emph{Top Row}), centered bins (\emph{Center Row}), and using a Welch filter (\emph{Bottom Row}). \jb{Add separations of $0.3$ and $0.7$ for right column} \jb{Fix the horrific tick locations.}  \jb{Add the grey band for beyond Nyquist modes.}}
+\end{figure}
+
+In the more general case of $N$ objects with individual locations $x_n$ are drawn uniformly in the interval $[0,L]$ and $k = 2\pi i / L$, then each individual phase factor is a Gaussian Random Deviate with unit variance \jb{or 2?}.
 Therefore, the ensemble average of $F_N$ in this case is given by the number of individual blobs $N$, with the stochastic locations of the individual sources in a given realization leading to oscillations around this mean rescaling.
 This basic structure is modified when the oscillon locations have non-trivial correlations (which we expect to be true in many cases of dynamical interest, such as oscillons generated through nonlinear fracturing after parametric resonance).
 \begin{figure}
-  \caption{Add some figures showing typical form functions if we randomly sample the oscillon positions in various ways.}
+  \caption{Add some figures showing typical form functions if we randomly sample the oscillon positions in various ways. \emph{Top Left}: $3$ oscillons uniformly distributed throughout the volume.}
 \end{figure}
 \jb{Using peak statistics of a GRF, can get an approximation for the correlations of the oscillons by getting the peak-peak correlations constrained to be above a threshold and with some band of widths.}
 \jb{Change this to 3D not 1D.  Also, ensemble averaging is probably not very useful from a lattice sim viewpoint, but is relevant to a detector with no directional sensitivity.}
@@ -751,7 +768,7 @@ Further, for notational simplicity, we introduce the following effective wavevec
 \jb{Rewrite this section so that $\sigma$ isn't folded into the definitions of the wavenumbers.}
 \begin{subequations}
 \begin{align}
-  \kzero_i &\equiv \frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) \approx \sigma k\hat{k}_i \\
+  \kzero_i &\equiv \frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) \approx \sigma k_i = \sigma k \hat{k}_i \\
   \ktwo_i &\equiv \hat{k}_i\frac{2\sigma}{dx}\sin\left(\frac{k_idx}{2}\right) = \hat{k}_i\kzero \approx \sigma k\hat{k}_i^2
 \end{align}
 \end{subequations}
