@@ -10,32 +10,33 @@ def _add_Nyq_band(ax,nl):
     ax.axvspan()
     return
 
-def plot_two_oscillon_convergence_len(dr):
+def plot_two_oscillon_convergence_len(dr,nMax=4):
     """
     Show how the convergence to the two oscillon state in the infinite volume limit is approached with 2 oscillons on a periodic lattice.
     Currently assumes that both oscillons lie along the x-axis.
 
     Input:
       dr - Separation in fraction of smallest box
-    
-    TO DO: Add vertical line for Nyquist
+      nMax - Controls number of grid levels in powers of 2
     """
     cc = pal.colorbrewer.sequential.Blues_9
     
     fig,ax = plt.subplots()
-    nBase = 16; nMax = 5
+    nBase = 16
     nn = nBase/2; nn3 = np.int(np.floor(3.**0.5*nn))+1
 
     cv = cc.mpl_colors[-nMax:]
     for i in range(nMax):
+        print i
         xv = np.array([[0.,0.,0.],[dr/2**i,0.,0.]])
         fs,ws,ks = F3_sample(xv,nBase*2**i,1)
+#        fs,ws,ks = F3_center_bin(xv,nBase*2**i,1)
+#        fs,ws,ks = F3_window(xv,nBase*2**i,1)
         ax.plot(ks/2.**i,fs/ws,label=r'$%i$' % (2**i),color=cv[i])
     kk = np.linspace(0.,nn3,500)
     ax.plot(kk,F3_exact(dr,2.*np.pi*kk),'r--',label=r'$\infty$')
 
-    ax.axvspan(nn,nn3,alpha=0.2,color='grey')
-    
+    ax.axvspan(nn,nn3,alpha=0.2,color='grey')  # Colour the super Nyquist modes
     ax.set_xlabel(r'$L_{%i}k / 2\pi$' % nBase); ax.set_ylabel(r'$F_2$')
 
     ax.set_ylim(1.,5.); ax.set_xlim(0,nn3)
@@ -89,6 +90,8 @@ def plot_uniform_x_3d(nx,nl,kv=None,fig=None,ax=None,testInt=None):
       fig - The figure containing the axis
       ax  - The axis the plot is drawn on
     """
+    colors = ['b','g','k']
+    
     x1 = np.linspace(0.,1.,nx,endpoint=False)
     xv = np.array(list(product(x1,x1,x1)))
     
@@ -96,7 +99,12 @@ def plot_uniform_x_3d(nx,nl,kv=None,fig=None,ax=None,testInt=None):
         fig,ax = plt.subplots()
         
     f,w,k = F3_sample(xv,nl,1)
-    ax.plot(k[1:],f[1:]/w[1:]/nx**3)
+    ax.plot(k[1:],f[1:]/w[1:]/nx**3,label='Floor',color=colors[0])
+    f,w,k = F3_center_bin(xv,nl,1)
+    ax.plot(k[1:],f[1:]/w[1:]/xv.shape[0],label='Center',color=colors[1])
+    f,w,k = F3_window(xv,nl,1)
+    ax.plot(k[1:],f[1:]/w[1:]/xv.shape[0],label='Welch',color=colors[2])
+
     f,k,a = F3_integrals(xv,nl,1)
     ax.plot(k[1:],f[1:]/nx**3,'ro')
     f,k,a = F3_integrals(xv,nl,0.1)
@@ -105,8 +113,8 @@ def plot_uniform_x_3d(nx,nl,kv=None,fig=None,ax=None,testInt=None):
         f,k,a = F3_integrals(xv,nl,0.1,ns=testInt)
         ax.plot(k[1:],f[1:]/nx**3,'r--')
 
-    ax.set_ylabel(r'$F_N / N_{\rm osc}$')
-    ax.set_xlabel(r'$kL / 2\pi$')
+#    ax.axvspan(nn,nn3,alpha=0.2,color='grey')
+    ax.set_ylabel(r'$F_N / N_{\rm osc}$'); ax.set_xlabel(r'$kL / 2\pi$')
     return fig,ax
 
 def plot_uniform_random_3d(nOsc,nl,fig=None,ax=None,testInt=None):
@@ -131,6 +139,11 @@ def plot_uniform_random_3d(nOsc,nl,fig=None,ax=None,testInt=None):
         
     f,w,k = F3_sample(xv,nl,1)
     ax.plot(k[1:],f[1:]/w[1:]/xv.shape[0])
+    f,w,k = F3_center_bin(xv,nl,1)
+    ax.plot(k[1:],f[1:]/w[1:]/xv.shape[0])
+    f,w,k = F3_window(xv,nl,1)
+    ax.plot(k[1:],f[1:]/w[1:]/xv.shape[0])
+    
     f,k,a = F3_integrals(xv,nl,1)
     ax.plot(k[1:],f[1:]/xv.shape[0],'ro')
     f,k,a = F3_integrals(xv,nl,0.1)
@@ -138,6 +151,8 @@ def plot_uniform_random_3d(nOsc,nl,fig=None,ax=None,testInt=None):
     if testInt is not None:
         f,k,a = F3_integrals(xv,nl,0.1,ns=testInt)
         ax.plot(k[1:],f[1:]/xv.shape[0],'r--')
+
+#    ax.axvspan(nn,nn3,alpha=0.2,color='grey')  # Colour the super Nyquist modes
     return fig,ax
 
 def plot_form_factor_contours(fName):

@@ -3,12 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
 
-def _nyq1D(n):
-    return n//2
-
-def _nyq3D(n):
-    return
-
 def F1(x,kv):
     """
     Return 1D form factor (continuum version) for oscillons at positions x_i
@@ -91,6 +85,68 @@ def F3_integrals_adapt(x,n,dn,ns=16):
         form[i] = norm*np.sum(st*np.abs(np.sum(np.exp(1j*2.*np.pi*ii*(k_x[...,np.newaxis]*x[:,0]+k_y[...,np.newaxis]*x[:,1]+k_z[...,np.newaxis]*x[:,2])),axis=-1))**2 )
     return form, dn*np.arange(nb)
 
+def _get_bins(n,dn):
+    """
+    Compute the number of bins given lattice size n and bin spacing dn
+    """
+    nn = n//2+1; nmax = (np.sqrt(3.)*(n//2))+2
+    nb = np.int(np.ceil(nmax/dn))
+
+def _dform(x,nx,ny,nz):
+    """
+    Sum over all combinations of given wavenumbers and negative values for given n_i's and oscillon positions.
+    To improve speed, fusion of equal terms is used to halve the number of combinations
+    """
+    dform  = 2.*( np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+               + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+               + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+               + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+    )
+    return dform
+
+def F3_sample_full(x,n,dn):
+    """
+    Return the form factor samples on lattice using various approaches to binning and smoothing.  This speeds up computations involving comparisons between the binning schemes.
+   
+    Input:
+      x  - Positions of oscillons
+      n  - Number of lattice sites (assumed same in all directions)
+      dn - Bin width to use
+
+    TO DO: Add windowing with various windows.  Adjust bin sizes
+    TO DO: Fix this to work properly for odd grids by weighting bins with Nyquist values properly
+    """
+    nn = n//2+1; nv = np.arange(nn); npos = np.arange(1,nn); nmax = np.int(np.sqrt(3.)*(n//2))+2
+    nb = np.int(np.ceil(nmax/dn))
+    nWin = 3  # Number of binning choices used
+    
+    form = np.zeros((nWin,nb)); w = np.zeros((nWin,nb))
+
+    # Fix Nyquist counting for odd grids
+    for nx,ny,nz in product(nv,nv,nv):
+        r = np.sqrt(nx**2+ny**2+nz**2)
+        i_f = np.int( np.floor(r/dn) )
+        i_c = np.int( np.floor(r/dn+0.5) )
+        i_w = np.array([ ])  # Fix this
+        nzeros = 3 - np.nonzero([nx,ny,nz])[0].size
+        nnyq = 3 - np.nonzero([nn-1-nx,nn-1-ny,nn-1-nz])[0].size
+        norm = 1./2.**(nzeros+nnyq)  
+        dform  = ( np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]+nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]+ny*x[:,1]-nz*x[:,2]))))**2
+                 + np.abs(np.sum(np.exp(1j*2.*np.pi*(-nx*x[:,0]-ny*x[:,1]-nz*x[:,2]))))**2
+                   )
+        # Weight modes properly accounting for zeros so that negative isn't part of grid
+        form[0,i_f] += norm*dform; w[0,i_f] += norm*8.
+        form[1,i_c] += 0.; w[1,i_c] += norm*8.
+        form[2,i_w] += 0.; w[2,i_w] += 0.
+    return form, w, dn*np.arange(nb)    
+
+
 def F3_sample_reduced(x,n,dn):
     """
     Return form factor sampled on lattice using a binning approach and only summing over the positive k-values.
@@ -103,6 +159,8 @@ def F3_sample_reduced(x,n,dn):
     TO DO: Add windowing with various windows.  Adjust bin sizes
     TO DO: Fix treatment of the zero modes?
     """
+    print("Warning, F3_sample_reduced is deprecated as it does not properly weight k-vectors with zero modes or Nyquist modes along a coordinate axis")
+    
     nn = n//2+1; nv = np.arange(nn); nmax = np.int(np.sqrt(3.)*nn)
     nb = np.int(np.ceil(nmax/dn)) 
     form = np.zeros(nb); w = np.zeros(nb)
@@ -271,11 +329,7 @@ def F3_dens(n,dn):
                 w[i,0] += 1.
                 w[i:i+2,1] += wtmp
     return w, dn*np.arange(nb)
-    
-def _get_nb(n):
-    nn = n//2+1
-    nmax = np.floor(np.sqrt(3.)*(n//2)/(1.*dn))+1+1
-    
+        
 def plot_uniform_x(nx,nl,kv=None):
     """
     Plot form factors in 1D sampled at lattice momenta for oscillons uniformly separated from each other (and thus highly correlated).  Plots the form factors up to the specified maximum number of oscillons, normalized to n_osc
@@ -313,19 +367,19 @@ def plot_uniform_random_pert(nx,nl,ns=1000,frac=0.01):
     
     return fig,ax
 
-def plot_uniform_random(nx,nl,ns=1000):
+def plot_uniform_random(nOsc,nl,ns=101):
     """
     Plot some form factors in 1D sampled at the lattice momenta for oscillons placed a randomly selected locations on the interval [0:L]
 
     Input:
-       nx - Number of oscillons
+       nOsc - Number of oscillons
        nl - Number of lattice sites
        ns - Number of form factor sample functions to plot
     """
     fig,ax = plt.subplots()
     for i in range(ns):
-        k,f = F1_sample(np.random.uniform(size=nx),1.,nl)
-        ax.plot(k[1:],f[1:]/nx)
+        k,f = F1_sample(np.random.uniform(size=nOsc),1.,nl)
+        ax.plot(k[1:],f[1:]/nOsc)
     return fig,ax
 
 def formFactorSamples_uniform(nOsc,nl,ns):
@@ -343,13 +397,13 @@ def formFactorSamples_uniform(nOsc,nl,ns):
        k    - k-values (in units of fundamental grid spacing)
     """
     for i in range(ns):
-        a,w,k = F3_sample(np.random.uniform(size=(nOsc,3)),nl,1)
+        a,w,k = F3_window(np.random.uniform(size=(nOsc,3)),nl,1)
     nb = k.size
         
     f = np.empty((ns,nb))
     f[0,:] = a
     for i in range(1,ns):
-        a,w,k = F3_sample(np.random.uniform(size=(nOsc,3)),nl,1)
+        a,w,k = F3_center_bin(np.random.uniform(size=(nOsc,3)),nl,1)
         f[i,:] = a
     return f,w,k
 
